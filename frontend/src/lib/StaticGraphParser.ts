@@ -206,6 +206,57 @@ function buildDag(
   }
 }
 
+
+export function createGraphIR(pipelineJob: any): dagre.graphlib.Graph {
+  const graph = new dagre.graphlib.Graph();
+  graph.setGraph({});
+  graph.setDefaultEdgeLabel(() => ({}));
+
+  if (!pipelineJob['pipelineSpec']['root']['dag']) {
+    throw new Error('Could not generate graph. Provided Pipeline had no components.');
+  }
+  
+  const dag = pipelineJob['pipelineSpec']['root']['dag'];
+  const tasks = dag['tasks'];
+
+  const templates = new Map<string, { nodeType: nodeType; template: Template }>();
+  for(var taskKey in tasks) {
+    const taskSpec = tasks[taskKey];
+
+    const nodeInfo = new SelectedNodeInfo();
+    _populateInfoFromTemplate(nodeInfo, ????template);
+    graph.setNode(taskKey, {
+      bgColor: color.lightGrey,
+      height: Constants.NODE_HEIGHT,
+      nodeInfo,
+      label: 'onExit - ' + taskKey,
+      width: Constants.NODE_WIDTH});
+
+  
+    // TODO
+    // set teamplates with container/resource/dag types.
+    // 
+  }
+
+  buildDag(graph, workflow.spec.entrypoint, templates, new Map(), '');
+  
+  // TODO: hand-build pipeline by users if there is only one entrypoint node but no graph.
+  //
+  // if (graph.nodeCount() === 0) {
+  //   const entryPointTemplate = workflowTemplates.find(t => t.name === workflow.spec.entrypoint);
+  //   if (entryPointTemplate) {
+  //     graph.setNode(entryPointTemplate.name, {
+  //       height: Constants.NODE_HEIGHT,
+  //       label: entryPointTemplate.name,
+  //       width: Constants.NODE_WIDTH,
+  //     });
+  //   }
+  // }
+
+  return graph;
+
+}
+
 export function createGraph(workflow: Workflow): dagre.graphlib.Graph {
   const graph = new dagre.graphlib.Graph();
   graph.setGraph({});
