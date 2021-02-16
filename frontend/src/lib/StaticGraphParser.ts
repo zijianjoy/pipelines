@@ -21,6 +21,10 @@ import { Constants } from './Constants';
 import { logger } from './Utils';
 import { parseTaskDisplayName } from './ParserUtils';
 import { graphlib } from 'dagre';
+import { buildPipelineDependencyGraph } from './PipelineSpecDrawer';
+
+import * as d3 from 'd3';
+import dagreD3 from 'dagre-d3';
 
 export type nodeType = 'container' | 'resource' | 'dag' | 'unknown';
 
@@ -206,40 +210,79 @@ function buildDag(
   }
 }
 
-
 export function createGraphIR(pipelineJob: any): dagre.graphlib.Graph {
-  const graph = new dagre.graphlib.Graph();
+  const graph = new dagreD3.graphlib.Graph({ compound: true });
   graph.setGraph({});
   graph.setDefaultEdgeLabel(() => ({}));
 
   if (!pipelineJob['pipelineSpec']['root']['dag']) {
     throw new Error('Could not generate graph. Provided Pipeline had no components.');
   }
-  
+
   const dag = pipelineJob['pipelineSpec']['root']['dag'];
   const tasks = dag['tasks'];
 
-  const templates = new Map<string, { nodeType: nodeType; template: Template }>();
-  for(var taskKey in tasks) {
-    const taskSpec = tasks[taskKey];
+  const dependencyGraph = buildPipelineDependencyGraph(pipelineJob);
 
-    const nodeInfo = new SelectedNodeInfo();
-    _populateInfoFromTemplate(nodeInfo, ????template);
-    graph.setNode(taskKey, {
+  // const templates = new Map<string, { nodeType: nodeType; template: Template }>();
+  for (var taskKey in tasks) {
+    // const taskSpec = tasks[taskKey];
+
+    const nodeInfo = dependencyGraph.nodes.get(taskKey)?.nodeInfo;
+    graph.setNode('0', {
       bgColor: color.lightGrey,
       height: Constants.NODE_HEIGHT,
       nodeInfo,
-      label: 'onExit - ' + taskKey,
-      width: Constants.NODE_WIDTH});
+      // label: 'template - ' + taskKey,
+      width: Constants.NODE_WIDTH,
+      label: 'Group',
+      clusterLabelPos: 'top',
+      style: 'fill: #d3d7e8',
+    });
+    graph.setNode('1', {
+      bgColor: color.lightGrey,
+      height: Constants.NODE_HEIGHT,
+      nodeInfo,
+      width: Constants.NODE_WIDTH,
+      label: 'Top Group',
+      clusterLabelPos: 'bottom',
+      style: 'fill: #ffd47f',
+    });
+    graph.setNode('2', {
+      bgColor: color.lightGrey,
+      height: Constants.NODE_HEIGHT,
+      nodeInfo,
+      label: 'template - ' + taskKey,
+      width: Constants.NODE_WIDTH,
+    });
+    graph.setNode('3', {
+      bgColor: color.lightGrey,
+      height: Constants.NODE_HEIGHT,
+      nodeInfo,
+      label: 'template - ' + taskKey,
+      width: Constants.NODE_WIDTH,
+    });
 
-  
+    graph.setParent('2', '1');
+    graph.setParent('3', '0');
+
+    graph.setEdge('2', '3');
+
     // TODO
     // set teamplates with container/resource/dag types.
-    // 
+    //
   }
 
-  buildDag(graph, workflow.spec.entrypoint, templates, new Map(), '');
-  
+  // to be uncomment
+  // for(let taskKey in dependencyGraph.nodes) {
+  //   let taskNode = dependencyGraph.nodes.get(taskKey);
+  //   if(taskNode?.parentNodes && taskNode.parentNodes.size > 0) {
+  //     continue;
+  //   } else {
+  //     buildDag(graph, taskKey, templates, new Map(), '');
+  //   }
+  // }
+
   // TODO: hand-build pipeline by users if there is only one entrypoint node but no graph.
   //
   // if (graph.nodeCount() === 0) {
@@ -254,7 +297,6 @@ export function createGraphIR(pipelineJob: any): dagre.graphlib.Graph {
   // }
 
   return graph;
-
 }
 
 export function createGraph(workflow: Workflow): dagre.graphlib.Graph {

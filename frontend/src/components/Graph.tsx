@@ -20,6 +20,8 @@ import { classes, stylesheet } from 'typestyle';
 import { fontsize, color, fonts, zIndex } from '../Css';
 import { Constants } from '../lib/Constants';
 import Tooltip from '@material-ui/core/Tooltip';
+import dagreD3 from 'dagre-d3';
+import d3 from 'd3';
 
 interface Segment {
   angle: number;
@@ -151,6 +153,20 @@ export class Graph extends React.Component<GraphProps, GraphState> {
     if (!graph.nodes().length) {
       return null;
     }
+
+    // // Create the renderer
+    // var render = new dagreD3.render();
+
+    // // Set up an SVG group so that we can translate the final graph.
+    // var svg = d3.select('svg'),
+    //   svgGroup = svg.append('g');
+
+    // // Run the renderer. This is what draws the final graph.
+    // render(d3.select('svg g'), graph);
+
+    // // Center the graph
+    // svgGroup.attr('transform', 'translate(' + 2 + ', 20)');
+    // // svg.attr("height", g.graph().height + 40);
 
     dagre.layout(graph);
     const displayEdges: Edge[] = [];

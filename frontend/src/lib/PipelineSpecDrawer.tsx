@@ -1,5 +1,6 @@
 import { SelectedNodeInfo } from "./StaticGraphParser";
 
+
 class PipelineTaskNode {
   parentNodes: Set<PipelineTaskNode>;
   childNodes: Set<PipelineTaskNode>;
@@ -9,6 +10,13 @@ class PipelineTaskNode {
 
 class PipelineDependencyGraph {
   nodes: Map<string, PipelineTaskNode>;
+
+  constructor() {
+    this.nodes = new Map<string, PipelineTaskNode>();
+  }
+}
+
+class DagNode {
 }
 
 export function buildPipelineDependencyGraph(pipelineJob: any): PipelineDependencyGraph {
@@ -26,22 +34,16 @@ export function buildPipelineDependencyGraph(pipelineJob: any): PipelineDependen
     node.name = taskKey;
     node.childNodes = new Set();
     node.parentNodes = new Set();
-    node.nodeInfo = _populateInfoFromTask()
-
     const nodeInfo = new SelectedNodeInfo();
-    _populateInfoFromTemplate(nodeInfo, ????template);
-    graph.setNode(taskKey, {
-      bgColor: color.lightGrey,
-      height: Constants.NODE_HEIGHT,
-      nodeInfo,
-      label: 'onExit - ' + taskKey,
-      width: Constants.NODE_WIDTH});
-    dependencyGraph.nodes[taskKey] = node;
+    _populateInfoFromTask(nodeInfo, tasks[taskKey]);
+    node.nodeInfo = nodeInfo;
+    dependencyGraph.nodes.set(taskKey, node);
   }
 
   for (let taskKey in tasks) {
     let task = tasks[taskKey];
-    if (task['inputs']['task_output_artifact']['producer_task']) {
+    if (task['inputs'] && task['inputs']['task_output_artifact']
+     && task['inputs']['task_output_artifact']['producer_task']) {
       let producer_task = task['inputs']['task_output_artifact']['producer_task'];
       if (dependencyGraph.nodes.has(producer_task)) {
         let parentNode = dependencyGraph.nodes.get(producer_task);

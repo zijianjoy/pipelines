@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+import { readFileSync } from 'fs';
+import '../graphd3.css';
 import * as JsYaml from 'js-yaml';
 import * as React from 'react';
 import * as StaticGraphParser from '../lib/StaticGraphParser';
@@ -579,12 +580,19 @@ class PipelineDetails extends Page<{}, PipelineDetailsState> {
 
   private async _createGraph(templateString: string): Promise<dagre.graphlib.Graph | null> {
     if (templateString) {
-      try {
-        const template = JsYaml.safeLoad(templateString);
-        return StaticGraphParser.createGraph(template!);
-      } catch (err) {
-        await this.showPageError('Error: failed to generate Pipeline graph.', err);
-      }
+      // try {
+      const template = JsYaml.safeLoad(templateString);
+
+      const response = await fetch(process.env.PUBLIC_URL + '/static/hello_world_spec.json');
+      const json = await response.json();
+      console.log(json);
+
+      return StaticGraphParser.createGraphIR(json);
+
+      // return StaticGraphParser.createGraph(template!);
+      // } catch (err) {
+      //   await this.showPageError('Error: failed to generate Pipeline graph.', err);
+      // }
     }
     return null;
   }
