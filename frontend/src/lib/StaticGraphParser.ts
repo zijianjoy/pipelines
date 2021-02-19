@@ -221,6 +221,9 @@ export function createGraphIR(pipelineJob: any): dagre.graphlib.Graph {
 
   const dag = pipelineJob['pipelineSpec']['root']['dag'];
   const tasks = dag['tasks'];
+  // ui pipeline spec proto
+  // cast pipeline job to pipeline ui job
+  // compile
 
   const dependencyGraph = buildPipelineDependencyGraph(pipelineJob);
 
@@ -229,44 +232,15 @@ export function createGraphIR(pipelineJob: any): dagre.graphlib.Graph {
     // const taskSpec = tasks[taskKey];
 
     const nodeInfo = dependencyGraph.nodes.get(taskKey)?.nodeInfo;
-    graph.setNode('0', {
+    graph.setNode(taskKey, {
       bgColor: color.lightGrey,
       height: Constants.NODE_HEIGHT,
       nodeInfo,
-      // label: 'template - ' + taskKey,
+      label: 'template - ' + taskKey,
       width: Constants.NODE_WIDTH,
-      label: 'Group',
       clusterLabelPos: 'top',
       style: 'fill: #d3d7e8',
     });
-    graph.setNode('1', {
-      bgColor: color.lightGrey,
-      height: Constants.NODE_HEIGHT,
-      nodeInfo,
-      width: Constants.NODE_WIDTH,
-      label: 'Top Group',
-      clusterLabelPos: 'bottom',
-      style: 'fill: #ffd47f',
-    });
-    graph.setNode('2', {
-      bgColor: color.lightGrey,
-      height: Constants.NODE_HEIGHT,
-      nodeInfo,
-      label: 'template - ' + taskKey,
-      width: Constants.NODE_WIDTH,
-    });
-    graph.setNode('3', {
-      bgColor: color.lightGrey,
-      height: Constants.NODE_HEIGHT,
-      nodeInfo,
-      label: 'template - ' + taskKey,
-      width: Constants.NODE_WIDTH,
-    });
-
-    graph.setParent('2', '1');
-    graph.setParent('3', '0');
-
-    graph.setEdge('2', '3');
 
     // TODO
     // set teamplates with container/resource/dag types.

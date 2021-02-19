@@ -1,0 +1,145 @@
+{
+    "pipelineSpec": {
+      "deploymentSpec": {
+        "executors": {
+          "exec-consumer": {
+            "container": {
+              "image": "google/cloud-sdk:latest",
+              "command": [
+                "sh",
+                "-c",
+                "set -e -x\necho \"Read from an input parameter: \" && echo \"$0\"\necho \"Read from an input artifact: \" && gsutil cat \"$1\"\n",
+                "{{$.inputs.parameters['input_value']}}",
+                "{{$.inputs.artifacts['input_artifact'].uri}}"
+              ]
+            }
+          },
+          "exec-producer": {
+            "container": {
+              "image": "google/cloud-sdk:latest",
+              "command": [
+                "sh",
+                "-c",
+                "set -e -x\necho \"$0, this is an output parameter\" | gsutil cp - \"$1\"\necho \"$0, this is an output artifact\" | gsutil cp - \"$2\"\n",
+                "{{$.inputs.parameters['input_text']}}",
+                "{{$.outputs.parameters['output_value'].output_file}}",
+                "{{$.outputs.artifacts['output_artifact'].uri}}"
+              ]
+            }
+          }
+        }
+      },
+      "pipelineInfo": {
+        "name": "simple-two-step-pipeline-jamxl-1613756626"
+      },
+      "sdkVersion": "kfp-1.5.0.dev0",
+      "components": {
+        "comp-consumer": {
+          "executorLabel": "exec-consumer",
+          "inputDefinitions": {
+            "artifacts": {
+              "input_artifact": {
+                "artifactType": {
+                  "instanceSchema": "properties:\ntitle: kfp.Artifact\ntype: object\n"
+                }
+              }
+            },
+            "parameters": {
+              "input_value": {
+                "type": "STRING"
+              }
+            }
+          }
+        },
+        "comp-producer": {
+          "inputDefinitions": {
+            "parameters": {
+              "input_text": {
+                "type": "STRING"
+              }
+            }
+          },
+          "outputDefinitions": {
+            "parameters": {
+              "output_value": {
+                "type": "STRING"
+              }
+            },
+            "artifacts": {
+              "output_artifact": {
+                "artifactType": {
+                  "instanceSchema": "properties:\ntitle: kfp.Artifact\ntype: object\n"
+                }
+              }
+            }
+          },
+          "executorLabel": "exec-producer"
+        }
+      },
+      "schemaVersion": "2.0.0",
+      "root": {
+        "dag": {
+          "tasks": {
+            "task-consumer": {
+              "componentRef": {
+                "name": "comp-consumer"
+              },
+              "taskInfo": {
+                "name": "task-consumer"
+              },
+              "inputs": {
+                "parameters": {
+                  "input_value": {
+                    "taskOutputParameter": {
+                      "outputParameterKey": "output_value",
+                      "producerTask": "task-producer"
+                    }
+                  }
+                },
+                "artifacts": {
+                  "input_artifact": {
+                    "taskOutputArtifact": {
+                      "outputArtifactKey": "output_artifact",
+                      "producerTask": "task-producer"
+                    }
+                  }
+                }
+              }
+            },
+            "task-producer": {
+              "taskInfo": {
+                "name": "task-producer"
+              },
+              "componentRef": {
+                "name": "comp-producer"
+              },
+              "inputs": {
+                "parameters": {
+                  "input_text": {
+                    "componentInputParameter": "text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "inputDefinitions": {
+          "artifacts": {
+            "text": {
+              "artifactType": {
+                "instanceSchema": "properties:\ntitle: kfp.Artifact\ntype: object\n"
+              }
+            }
+          }
+        }
+      }
+    },
+    "runtimeConfig": {
+      "parameters": {
+        "text": {
+          "stringValue": "Hello world"
+        }
+      },
+      "gcsOutputDirectory": "gs://sample_pipeline_component"
+    }
+  }

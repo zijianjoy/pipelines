@@ -583,7 +583,8 @@ class PipelineDetails extends Page<{}, PipelineDetailsState> {
       // try {
       const template = JsYaml.safeLoad(templateString);
 
-      const response = await fetch(process.env.PUBLIC_URL + '/static/hello_world_spec.json');
+      // const response = await fetch(process.env.PUBLIC_URL + '/static/hello_world_spec.json');
+      const response = await fetch(process.env.PUBLIC_URL + '/static/two_steps_spec.json');
       const json = await response.json();
       console.log(json);
 
