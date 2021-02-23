@@ -57,6 +57,18 @@ export class SelectedNodeInfo {
   }
 }
 
+export class DagNodeInfo {
+  public taskName: string;
+  public parents: Set<string>;
+  public children: Set<string>;
+
+  constructor(taskName: string) {
+    this.taskName = taskName;
+    this.parents = new Set();
+    this.children = new Set();
+  }
+}
+
 export function _populateInfoFromTemplate(
   info: SelectedNodeInfo,
   template?: Template,
@@ -210,6 +222,104 @@ function buildDag(
   }
 }
 
+function buildDagIR(
+  graph: dagre.graphlib.Graph,
+  rootNodeName: string,
+  dagNodes: Map<string, DagNodeInfo>,
+  alreadyVisited: Map<string, string>,
+  parentFullPath: string,
+): void {
+  // alreadyVisited.set(rootNodeName, parentFullPath || '/' + rootNodeName);
+
+  dagNodes.forEach(dagNodeInfo => {
+    if (dagNodeInfo.taskName in alreadyVisited) {
+      return;
+    }
+    dagNodeInfo.children.forEach(child => {
+      graph.setEdge(dagNodeInfo.taskName, child);
+    });
+    alreadyVisited.set(dagNodeInfo.taskName, parentFullPath || dagNodeInfo.taskName);
+  });
+
+  return;
+
+  // (template.dag.tasks || []).forEach(task => {
+  //   const nodeId = parentFullPath + '/' + task.name;
+
+  //   // If the user specifies an exit handler, then the compiler will wrap the entire Pipeline
+  //   // within an additional DAG template prefixed with "exit-handler".
+  //   // If this is the case, we simply treat it as the root of the graph and work from there
+  //   // if (task.name.startsWith('exit-handler')) {
+  //   //   buildDag(graph, task.template, templates, alreadyVisited, '');
+  //   //   return;
+  //   // }
+
+  //   // If this task has already been visited, retrieve the qualified path name that was assigned
+  //   // to it, add an edge, and move on to the next task
+  //   if (alreadyVisited.has(task.name)) {
+  //     graph.setEdge(parentFullPath, alreadyVisited.get(task.name)!);
+  //     return;
+  //   }
+
+  //   // Parent here will be the task that pointed to this DAG template.
+  //   // Within a DAG template, tasks can have dependencies on one another, and long chains of
+  //   // dependencies can be present within a single DAG. In these cases, we choose not to draw an
+  //   // edge from the DAG node itself to these tasks with dependencies because such an edge would
+  //   // not be meaningful to the user. For example, consider a DAG A with two tasks, B and C, where
+  //   // task C depends on the output of task B. C is a task of A, but it's much more semantically
+  //   // important that C depends on B, so to avoid cluttering the graph, we simply omit the edge
+  //   // between A and C:
+  //   //      A                  A
+  //   //    /   \    becomes    /
+  //   //   B <-- C             B
+  //   //                      /
+  //   //                     C
+  //   if (parentFullPath && !task.dependencies) {
+  //     graph.setEdge(parentFullPath, nodeId);
+  //   }
+
+  //   // This object contains information about the node that we display to the user when they
+  //   // click on a node in the graph
+  //   const info = new SelectedNodeInfo();
+  //   if (task.when) {
+  //     info.condition = task.when;
+  //   }
+
+  //   // "Child" here is the template that this task points to. This template should either be a
+  //   // DAG, in which case we recurse, or a container/resource which can be thought of as a
+  //   // leaf node
+  //   const child = templates.get(task.template);
+  //   let nodeLabel = task.template;
+  //   if (child) {
+  //     if (child.nodeType === 'dag') {
+  //       buildDag(graph, task.template, templates, alreadyVisited, nodeId);
+  //     } else if (child.nodeType === 'container' || child.nodeType === 'resource') {
+  //       nodeLabel = parseTaskDisplayName(child.template.metadata) || nodeLabel;
+  //       _populateInfoFromTemplate(info, child.template);
+  //     } else {
+  //       throw new Error(
+  //         `Unknown nodetype: ${child.nodeType} on workflow template: ${child.template}`,
+  //       );
+  //     }
+  //   }
+
+  //   graph.setNode(nodeId, {
+  //     bgColor: task.when ? 'cornsilk' : undefined,
+  //     height: Constants.NODE_HEIGHT,
+  //     info,
+  //     label: nodeLabel,
+  //     width: Constants.NODE_WIDTH,
+  //   });
+
+  //   // DAG tasks can indicate dependencies which are graphically shown as parents with edges
+  //   // pointing to their children (the task(s)).
+  //   // TODO: The addition of the parent prefix to the dependency here is only valid if nodes only
+  //   // ever directly depend on their siblings. This is true now but may change in the future, and
+  //   // this will need to be updated.
+  //   (task.dependencies || []).forEach(dep => graph.setEdge(parentFullPath + '/' + dep, nodeId));
+  // });
+}
+
 export function createGraphIR(pipelineJob: any): dagre.graphlib.Graph {
   const graph = new dagreD3.graphlib.Graph({ compound: true });
   graph.setGraph({});
@@ -225,6 +335,8 @@ export function createGraphIR(pipelineJob: any): dagre.graphlib.Graph {
   // cast pipeline job to pipeline ui job
   // compile
 
+  const dagNodes = new Map<string, DagNodeInfo>();
+
   const dependencyGraph = buildPipelineDependencyGraph(pipelineJob);
 
   // const templates = new Map<string, { nodeType: nodeType; template: Template }>();
@@ -236,16 +348,55 @@ export function createGraphIR(pipelineJob: any): dagre.graphlib.Graph {
       bgColor: color.lightGrey,
       height: Constants.NODE_HEIGHT,
       nodeInfo,
-      label: 'template - ' + taskKey,
+      label: taskKey,
       width: Constants.NODE_WIDTH,
-      clusterLabelPos: 'top',
       style: 'fill: #d3d7e8',
     });
+    dagNodes.set(taskKey, new DagNodeInfo(taskKey));
 
     // TODO
     // set teamplates with container/resource/dag types.
     //
   }
+
+  // Find all explicit and implicit dependency for node taskKey.
+  for (var taskKey in tasks) {
+    const dagNode = dagNodes.get(taskKey);
+    // Iterate expplicit dependencies
+    let pipelineTaskSpec = tasks[taskKey];
+    let dependentTasks = pipelineTaskSpec['dependentTasks'];
+    for (var dependentTaskKey in dependentTasks) {
+      let dependentTask = dependentTasks[dependentTaskKey];
+      dagNode?.parents.add(dependentTask);
+      let parentNode = dagNodes.get(dependentTask);
+      parentNode?.children.add(taskKey);
+    }
+
+    // Iterate implicit dependencies
+    if (pipelineTaskSpec['inputs']['artifacts']) {
+      let artifacts = pipelineTaskSpec['inputs']['artifacts'];
+      for (var artifactKey in artifacts) {
+        if (artifacts[artifactKey]['taskOutputArtifact']) {
+          let producerTask = artifacts[artifactKey]['taskOutputArtifact']['producerTask'];
+
+          dagNode?.parents.add(producerTask);
+          let parentNode = dagNodes.get(producerTask);
+          parentNode?.children.add(taskKey);
+        }
+      }
+    }
+  }
+
+  // let rootNodeName = '';
+  // for (var nodeKey in dagNodes) {
+  //   if (dagNodes.get(nodeKey)?.parents.size == 0) {
+  //     rootNodeName = nodeKey;
+  //     break;
+  //   }
+  // }
+  // if (rootNodeName !== '') {
+  buildDagIR(graph, '', dagNodes, new Map(), '');
+  // }
 
   // to be uncomment
   // for(let taskKey in dependencyGraph.nodes) {
