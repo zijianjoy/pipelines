@@ -20,15 +20,53 @@ import React from 'react';
 import { Array as ArrayRunType, Number, Failure, Record, String, ValidationError } from 'runtypes';
 import IconWithTooltip from 'src/atoms/IconWithTooltip';
 import { color, padding } from 'src/Css';
+import { Apis } from 'src/lib/Apis';
 import { filterArtifactsByType } from 'src/lib/MlmdUtils';
+import { OutputArtifactLoader } from 'src/lib/OutputArtifactLoader';
+import { S3Artifact } from 'third_party/argo-ui/argo_template';
 import Banner from '../Banner';
 import ConfusionMatrix, { ConfusionMatrixConfig } from './ConfusionMatrix';
 import ROCCurve, { ROCCurveConfig } from './ROCCurve';
 import { PlotType } from './Viewer';
+import { isS3Endpoint } from '../../lib/AwsHelper';
+import { StorageService, StoragePath } from '../../lib/WorkflowParser';
+import { ExternalLink } from 'src/atoms/ExternalLink';
 
 interface MetricsVisualizationsProps {
   artifacts: Artifact[];
   artifactTypes: ArtifactType[];
+}
+
+function getStoragePath(value?: string | Partial<S3Artifact>) {
+  if (!value || typeof value === 'string') return;
+  const { key, bucket, endpoint } = value;
+  if (!bucket || !key) return;
+  const source = isS3Endpoint(endpoint) ? StorageService.S3 : StorageService.MINIO;
+  return { source, bucket, key };
+}
+async function getPreview(
+  storagePath: StoragePath,
+  namespace: string | undefined,
+  maxbytes: number,
+  maxlines?: number,
+): Promise<{ data: string; hasMore: boolean }> {
+  // TODO how to handle binary data (can probably use magic number to id common mime types)
+  let data = await Apis.readFile(storagePath, namespace, maxbytes + 1);
+  // is preview === data and no maxlines
+  if (data.length <= maxbytes && !maxlines) {
+    return { data, hasMore: false };
+  }
+  // remove extra byte at the end (we requested maxbytes +1)
+  data = data.slice(0, maxbytes);
+  // check num lines
+  if (maxlines) {
+    data = data
+      .split('\n')
+      .slice(0, maxlines)
+      .join('\n')
+      .trim();
+  }
+  return { data: `${data}\n...`, hasMore: true };
 }
 
 /**
@@ -39,6 +77,7 @@ export function MetricsVisualizations({ artifacts, artifactTypes }: MetricsVisua
   // system.ClassificationMetrics contains confusionMatrix or confidenceMetrics.
   // TODO: Visualize confusionMatrix using system.ClassificationMetrics artifacts.
   // https://github.com/kubeflow/pipelines/issues/5668
+  console.log(JSON.stringify(artifactTypes));
   let classificationMetricsArtifacts = filterArtifactsByType(
     'system.ClassificationMetrics',
     artifactTypes,
@@ -50,6 +89,26 @@ export function MetricsVisualizations({ artifacts, artifactTypes }: MetricsVisua
   // If there is no available metrics, show banner to notify users.
   // Otherwise, Visualize all available metrics per artifact.
   const metricsAvailableArtifacts = getMetricsAvailableArtifacts(classificationMetricsArtifacts);
+
+  // system.Artifact types
+  let systemArtifacts = filterArtifactsByType('system.Artifact', artifactTypes, artifacts);
+  console.log('system.Artifact:' + JSON.stringify(systemArtifacts));
+
+  const storagePath = getStoragePath(systemArtifacts[0].getUri());
+  // const linkText = Apis.buildArtifactUrl(storagePath!);
+  // const artifactViewUrl = Apis.buildReadFileUrl({ path: storagePath!, namespace:'' });
+  // // OutputArtifactLoader.load(storagePath!, '')
+  // const content = getPreview({ source, bucket, key }, namespace, maxbytes, maxlines);
+  // if(storagePath) {
+  //   return
+  //   {content?.data && (
+  //     <div >
+  //       <small>
+  //         <pre>{content.data}</pre>
+  //       </small>
+  //     </div>
+  //   )};
+  // }
 
   if (metricsAvailableArtifacts.length === 0) {
     return <Banner message='There is no metrics artifact available in this step.' mode='info' />;
