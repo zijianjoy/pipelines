@@ -179,6 +179,7 @@ function ConfidenceMetricsSection({ artifact }: ConfidenceMetricsSectionProps) {
     </div>
   );
 }
+i am a typo.
 
 const ConfidenceMetricRunType = Record({
   confidenceThreshold: Number,
