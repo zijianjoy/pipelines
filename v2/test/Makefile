@@ -14,12 +14,17 @@ all: sample-test
 sample-test: context
 # The -u flag makes python output unbuffered, so that we can see real time log.
 # Reference: https://stackoverflow.com/a/107717
-	python -u scripts/upload_gcs_blob.py tmp/context.tar.gz $(GCS_ROOT)/src/context.tar.gz
-	python -u sample_test.py \
+	python3 -u scripts/upload_gcs_blob.py tmp/context.tar.gz $(GCS_ROOT)/src/context.tar.gz
+	python3 -u sample_test.py \
 		--context $(GCS_ROOT)/src/context.tar.gz \
 		--host $(HOST) \
 		--gcs_root $(GCS_ROOT)/data \
 		--gcr_root $(GCR_ROOT)
+
+# python -m samples.test.minio_pipeline_root_two_step_test \
+# --host https://1746e7df704711dc-dot-us-west1.pipelines.googleusercontent.com \
+# --output_directory s3://kfp-v2-experimental?region=minio&endpoint=minio-service.kubeflow:9000&disableSSL=true&s3ForcePathStyle=true \
+# --launcher_image gcr.io/xiyue-kfp/kfp-launcher@sha256:6f677671be43195e83e0e245b8c8bde7d5d7436e07301a9f0b741daba2be7d7a
 
 .PHONY: context
 context:
@@ -45,4 +50,4 @@ context:
 
 .PHONY: mlmd-port-forward
 mlmd-port-forward:
-	kubectl port-forward svc/metadata-grpc-service 8080:8080
+	kubectl port-forward svc/metadata-grpc-service 8080:8080 --namespace kubeflow
