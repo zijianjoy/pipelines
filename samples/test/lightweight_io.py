@@ -46,6 +46,7 @@ from typing import Dict, List
 from kfp import dsl
 from kfp import components
 from kfp.components import InputPath, OutputPath
+from kfp.dsl.io_types import Artifact
 from kfp.v2.dsl import Input, Output, Dataset, Model, component
 import kfp.v2.compiler as compiler
 
@@ -139,6 +140,30 @@ def train(
   # to store arbitrary metadata for the output artifact.
   model.metadata['accuracy'] = 0.9
 
+@component
+def visall(mlpipeline_ui_metadata: Output[Artifact]):
+  # ROC Curve
+  # Confusion Matrix
+  # scalar
+  # v1 metrics
+  # markdown/html/confusion
+  import json
+    
+  metadata = {
+    'outputs' : [
+    # Markdown that is hardcoded inline
+    {
+      'storage': 'inline',
+      'source': '# Inline Markdown\n[A link](https://www.kubeflow.org/)',
+      'type': 'markdown',
+    }]
+  }
+  with open(mlpipeline_ui_metadata.path, 'w') as metadata_file:
+    json.dump(metadata, metadata_file)
+  
+  
+
+
 # @dsl.pipeline(
 #     pipeline_root='gs://jamxl-kfp-bucket/v2/artifacts', name='lightweight_python_functions_v2_pipeline_beta')
 @dsl.pipeline(name='pipeline-with-lightweight-io')
@@ -152,6 +177,8 @@ def pipeline(message: str = 'empty'):
         input_dict=preprocess_task.outputs['output_dict_parameter'],
         input_list=preprocess_task.outputs['output_list_parameter'],
         num_steps=5)
+    visall_task = visall().after(train_task)
+
 
 
 # def main(

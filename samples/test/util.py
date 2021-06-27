@@ -114,8 +114,8 @@ def _run_test(callback):
         output_directory: Optional[str] = None,  # example
         host: Optional[str] = None,
         external_host: Optional[str] = None,
-        launcher_image: Optional['URI'] = None,
-        experiment: str = 'v2_sample_test_samples',
+        launcher_image: Optional[str] = None,
+        experiment: str = 'v1_vis_in_v2', # 'v2_sample_test_samples',
         metadata_service_host: Optional[str] = None,
         metadata_service_port: int = 8080,
     ):
