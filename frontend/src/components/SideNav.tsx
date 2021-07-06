@@ -312,6 +312,39 @@ export class SideNav extends React.Component<SideNavInternalProps, SideNavState>
             )}
           />
           <Tooltip
+            title={'Pipeline V2 List'}
+            enterDelay={300}
+            placement={'right-start'}
+            disableFocusListener={!collapsed}
+            disableHoverListener={!collapsed}
+            disableTouchListener={!collapsed}
+          >
+            <Link
+              id='pipelinesBtn'
+              to={RoutePage.PIPELINE_DETAILS_V2}
+              className={commonCss.unstyled}
+            >
+              <Button
+                className={classes(
+                  css.button,
+                  page.startsWith(RoutePage.PIPELINE_DETAILS_V2) && css.active,
+                  collapsed && css.collapsedButton,
+                )}
+              >
+                <PipelinesIcon
+                  color={
+                    page.startsWith(RoutePage.PIPELINE_DETAILS_V2)
+                      ? iconColor.active
+                      : iconColor.inactive
+                  }
+                />
+                <span className={classes(collapsed && css.collapsedLabel, css.label)}>
+                  Pipelines V2
+                </span>
+              </Button>
+            </Link>
+          </Tooltip>
+          <Tooltip
             title={'Pipeline List'}
             enterDelay={300}
             placement={'right-start'}

@@ -48,6 +48,7 @@ import { commonCss } from '../Css';
 import NewPipelineVersion from '../pages/NewPipelineVersion';
 import { GettingStarted } from '../pages/GettingStarted';
 import { KFP_FLAGS, Deployments } from '../lib/Flags';
+import PipelineDetailsV2 from 'src/pages/PipelineDetailsV2';
 
 export type RouteConfig = {
   path: string;
@@ -93,6 +94,7 @@ export const RoutePrefix = {
 
 // tslint:disable-next-line:variable-name
 export const RoutePage = {
+  PIPELINE_DETAILS_V2: '/pipelinesv2',
   ARCHIVED_RUNS: '/archive/runs',
   ARCHIVED_EXPERIMENTS: '/archive/experiments',
   ARTIFACTS: '/artifacts',
@@ -159,6 +161,7 @@ const DEFAULT_ROUTE =
 // This component is made as a wrapper to separate toolbar state for different pages.
 const Router: React.FC<RouterProps> = ({ configs }) => {
   const routes: RouteConfig[] = configs || [
+    { path: RoutePage.PIPELINE_DETAILS_V2, Component: PipelineDetailsV2 },
     { path: RoutePage.START, Component: GettingStarted },
     {
       Component: AllRunsAndArchive,
