@@ -115,6 +115,7 @@ export const css = stylesheet({
 });
 
 // 1. A button to upload pipeline V2 IR json
+// 2.a Protoc pipeline IR to a js client.
 // 2. Visualize static IR Graph based on IR.
 // 3. click on one item, open input/output/container/command/image/argument/volume mount/etc.
 // 4. Show IR detail
