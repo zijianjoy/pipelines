@@ -22,7 +22,7 @@ interface PipelineIRDialogProps {
 export default function PipelineIRDialog({ onSubmit }: PipelineIRDialogProps) {
   const [open, setOpen] = React.useState(false);
   const pipelineContent = React.createRef();
-  const [content, setContent] = React.useState('default');
+  const [content, setContent] = React.useState('');
 
   //   const onChange = (e) =>{ setContent({ value: e.target.value }};
 

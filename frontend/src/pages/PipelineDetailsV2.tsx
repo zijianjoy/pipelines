@@ -50,6 +50,8 @@ import MenuItem from '@material-ui/core/MenuItem';
 import { compareGraphEdges, transitiveReduction } from '../lib/StaticGraphParser';
 import ReduceGraphSwitch from '../components/ReduceGraphSwitch';
 import PipelineIRDialog from './PipelineIRDialog';
+import protobuf from 'protobufjs';
+import { PipelineJob, PipelineSpec } from 'src/third_party/pipeline_spec';
 
 interface PipelineDetailsState {
   graph: dagre.graphlib.Graph | null;
@@ -238,6 +240,61 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
     const onSubmit = (content: string) => {
       this.setStateSafe({ pipelineIR: content });
     };
+
+    protobuf.load('static/pipeline_spec.proto', function(err, root) {
+      if (err) throw err;
+
+      if (!root) {
+        return;
+      }
+
+      // Obtain a message type
+      var PipelineSpecVar = root.lookupType('ml_pipelines.PipelineSpec');
+
+      // Exemplary payload
+      var payload = JSON.parse(pipelineIR);
+
+      // Verify the payload if necessary (i.e. when possibly incomplete or invalid)
+      var errMsg = PipelineSpecVar.verify(payload);
+      if (errMsg) throw Error(errMsg);
+
+      // // Create a new message
+      var message = PipelineSpecVar.create(payload); // or use .fromObject if conversion is necessary
+
+      // // Encode a message to an Uint8Array (browser) or Buffer (node)
+      var buffer = PipelineSpecVar.encode(message).finish();
+      // // ... do something with buffer
+      const p = PipelineSpec.deserializeBinary(buffer);
+      console.log(
+        'PipelineSpec ' +
+          p
+            .getRoot()
+            ?.getDag()
+            ?.getTasksMap()
+            .get('component-with-concat-placeholder')
+            ?.getInputs()
+            ?.getParametersMap()
+            ?.get('input_prefix')
+            ?.getRuntimeValue()
+            ?.getConstantValue()
+            ?.getStringValue(),
+        // ?.getName(),
+      );
+
+      // // Decode an Uint8Array (browser) or Buffer (node) to a message
+      // var message = AwesomeMessage.decode(buffer);
+      // // ... do something with message
+
+      // // If the application uses length-delimited buffers, there is also encodeDelimited and decodeDelimited.
+
+      // // Maybe convert the message back to a plain object
+      // var object = AwesomeMessage.toObject(message, {
+      //     longs: String,
+      //     enums: String,
+      //     bytes: String,
+      //     // see ConversionOptions
+      // });
+    });
 
     return (
       <div className={classes(commonCss.page, padding(20, 't'))}>
