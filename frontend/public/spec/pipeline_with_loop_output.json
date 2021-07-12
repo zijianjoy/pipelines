@@ -1,0 +1,41 @@
+{
+  "root": {
+    "dag": {
+      "tasks": {
+        "args-generator-op": {
+          "componentRef": {
+            "name": "comp-args-generator-op"
+          },
+          "taskInfo": {
+            "name": "args-generator-op"
+          }
+        },
+        "for-loop-1": {
+          "componentRef": {
+            "name": "comp-for-loop-1"
+          },
+          "dependentTasks": ["args-generator-op"],
+          "inputs": {
+            "parameters": {
+              "pipelineparam--args-generator-op-Output": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "Output",
+                  "producerTask": "args-generator-op"
+                }
+              }
+            }
+          },
+          "parameterIterator": {
+            "itemInput": "pipelineparam--args-generator-op-Output-loop-item",
+            "items": {
+              "inputParameter": "pipelineparam--args-generator-op-Output"
+            }
+          },
+          "taskInfo": {
+            "name": "for-loop-1"
+          }
+        }
+      }
+    }
+  }
+}

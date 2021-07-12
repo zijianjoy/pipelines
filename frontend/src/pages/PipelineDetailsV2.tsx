@@ -52,6 +52,9 @@ import ReduceGraphSwitch from '../components/ReduceGraphSwitch';
 import PipelineIRDialog from './PipelineIRDialog';
 import protobuf from 'protobufjs';
 import { PipelineJob, PipelineSpec } from 'src/third_party/pipeline_spec';
+import StaticCanvas from 'src/graph/StaticCanvas';
+import { Elements } from 'react-flow-renderer';
+import FlowUtil from 'src/graph/FlowUtil';
 
 interface PipelineDetailsState {
   graph: dagre.graphlib.Graph | null;
@@ -67,6 +70,7 @@ interface PipelineDetailsState {
   versions: ApiPipelineVersion[];
   showReducedGraph: boolean;
   pipelineIR: string;
+  elements: Elements;
 }
 
 const summaryCardWidth = 500;
@@ -132,13 +136,14 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       graph: null,
       reducedGraph: null,
       pipeline: null,
-      selectedNodeId: '',
+      selectedNodeId: 'a',
       selectedNodeInfo: null,
       selectedTab: 0,
       summaryShown: true,
       versions: [],
       showReducedGraph: false,
       pipelineIR: '',
+      elements: [],
     };
   }
 
@@ -194,7 +199,6 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       };
     }
   }
-
   public render(): JSX.Element {
     const {
       pipeline,
@@ -206,18 +210,8 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       versions,
       showReducedGraph,
       pipelineIR,
+      elements,
     } = this.state;
-
-    // Since react-ace Editor doesn't support in Safari when height or width is a percentage.
-    // Fix the Yaml file cannot display issue via defining “width/height” does not not take percentage if it's Safari browser.
-    // The code of detecting wether isSafari is from: https://stackoverflow.com/questions/9847580/how-to-detect-safari-chrome-ie-firefox-and-opera-browser/9851769#9851769
-    const isSafari =
-      /constructor/i.test(window.HTMLElement.toString()) ||
-      (function(p) {
-        return p.toString() === '[object SafariRemoteNotification]';
-      })(
-        !window['safari'] || (typeof 'safari' !== 'undefined' && window['safari'].pushNotification),
-      );
 
     const graphToShow =
       this.state.showReducedGraph && this.state.reducedGraph
@@ -233,76 +227,87 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
 
     let editorHeightWidth = '100%';
 
-    if (isSafari) {
-      editorHeightWidth = '640px';
-    }
+    const updateGraph = (spec: PipelineSpec) => {
+      const newelements = FlowUtil.convertToFlowElements(spec);
 
+      this.setStateSafe({ elements: newelements });
+    };
     const onSubmit = (content: string) => {
       this.setStateSafe({ pipelineIR: content });
+      protobuf.load('static/pipeline_spec.proto').then(function(root) {
+        if (!root) {
+          return;
+        }
+
+        // Obtain a message type
+        var PipelineSpecVar = root.lookupType('ml_pipelines.PipelineSpec');
+
+        // Exemplary payload
+        var payload = JSON.parse(content);
+
+        // Verify the payload if necessary (i.e. when possibly incomplete or invalid)
+        var errMsg = PipelineSpecVar.verify(payload);
+        if (errMsg) throw Error(errMsg);
+
+        // // Create a new message
+        var message = PipelineSpecVar.create(payload); // or use .fromObject if conversion is necessary
+
+        // // Encode a message to an Uint8Array (browser) or Buffer (node)
+        var buffer = PipelineSpecVar.encode(message).finish();
+        // // ... do something with buffer
+        const spec = PipelineSpec.deserializeBinary(buffer);
+        console.log(
+          'PipelineSpec ' +
+            spec
+              .getRoot()
+              ?.getDag()
+              ?.getTasksMap()
+              .get('component-with-concat-placeholder')
+              ?.getInputs()
+              ?.getParametersMap()
+              ?.get('input_prefix')
+              ?.getRuntimeValue()
+              ?.getConstantValue()
+              ?.getStringValue(),
+          // ?.getName(),
+        );
+        updateGraph(spec);
+      });
     };
 
-    protobuf.load('static/pipeline_spec.proto', function(err, root) {
-      if (err) throw err;
+    const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const filename = event.target.value;
 
-      if (!root) {
-        return;
-      }
+      fetch(process.env.PUBLIC_URL + '/spec/' + filename)
+        .then(res => res.json())
+        .then(data => {
+          onSubmit(JSON.stringify(data));
+        });
+    };
 
-      // Obtain a message type
-      var PipelineSpecVar = root.lookupType('ml_pipelines.PipelineSpec');
-
-      // Exemplary payload
-      var payload = JSON.parse(pipelineIR);
-
-      // Verify the payload if necessary (i.e. when possibly incomplete or invalid)
-      var errMsg = PipelineSpecVar.verify(payload);
-      if (errMsg) throw Error(errMsg);
-
-      // // Create a new message
-      var message = PipelineSpecVar.create(payload); // or use .fromObject if conversion is necessary
-
-      // // Encode a message to an Uint8Array (browser) or Buffer (node)
-      var buffer = PipelineSpecVar.encode(message).finish();
-      // // ... do something with buffer
-      const p = PipelineSpec.deserializeBinary(buffer);
-      console.log(
-        'PipelineSpec ' +
-          p
-            .getRoot()
-            ?.getDag()
-            ?.getTasksMap()
-            .get('component-with-concat-placeholder')
-            ?.getInputs()
-            ?.getParametersMap()
-            ?.get('input_prefix')
-            ?.getRuntimeValue()
-            ?.getConstantValue()
-            ?.getStringValue(),
-        // ?.getName(),
-      );
-
-      // // Decode an Uint8Array (browser) or Buffer (node) to a message
-      // var message = AwesomeMessage.decode(buffer);
-      // // ... do something with message
-
-      // // If the application uses length-delimited buffers, there is also encodeDelimited and decodeDelimited.
-
-      // // Maybe convert the message back to a plain object
-      // var object = AwesomeMessage.toObject(message, {
-      //     longs: String,
-      //     enums: String,
-      //     bytes: String,
-      //     // see ConversionOptions
-      // });
-    });
+    const samples = [
+      'pipeline_with_concat_placeholder.json',
+      'pipeline_with_loop_output.json',
+      'xgboost_sample_pipeline.json',
+      'pipeline_with_various_io_types.json',
+      'pipeline_with_ontology.json',
+    ];
 
     return (
       <div className={classes(commonCss.page, padding(20, 't'))}>
         <div className={commonCss.page}>
           <div className={commonCss.page}>
             <PipelineIRDialog onSubmit={onSubmit}></PipelineIRDialog>
+            <select onChange={handleSelectChange}>
+              {samples.map(sample => {
+                return <option value={sample}>{sample}</option>;
+              })}
+            </select>
             <div className={commonCss.page}>
-              <div>{pipelineIR}</div>
+              <div className={commonCss.page} style={{ position: 'relative', overflow: 'hidden' }}>
+                <StaticCanvas elements={this.state.elements}></StaticCanvas>
+                {/* <div>{pipelineIR}</div> */}
+              </div>
               {graphToShow && (
                 <div
                   className={commonCss.page}
