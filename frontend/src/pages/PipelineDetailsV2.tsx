@@ -245,12 +245,14 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
         // Exemplary payload
         var payload = JSON.parse(content);
 
+        var payloadPipelineSpec = payload['pipelineSpec'];
+
         // Verify the payload if necessary (i.e. when possibly incomplete or invalid)
-        var errMsg = PipelineSpecVar.verify(payload);
-        if (errMsg) throw Error(errMsg);
+        // var errMsg = PipelineSpecVar.verify(payloadPipelineSpec);
+        // if (errMsg) throw Error(errMsg);
 
         // // Create a new message
-        var message = PipelineSpecVar.create(payload); // or use .fromObject if conversion is necessary
+        var message = PipelineSpecVar.fromObject(payloadPipelineSpec); // or use .fromObject if conversion is necessary
 
         // // Encode a message to an Uint8Array (browser) or Buffer (node)
         var buffer = PipelineSpecVar.encode(message).finish();

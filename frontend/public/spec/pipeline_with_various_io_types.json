@@ -1,4 +1,5 @@
 {
+  "pipelineSpec": {
     "components": {
       "comp-downstream": {
         "executorLabel": "exec-downstream",
@@ -37,7 +38,7 @@
           },
           "parameters": {
             "input_a": {
-              "type": 1
+              "type": "INT"
             }
           }
         }
@@ -47,16 +48,16 @@
         "inputDefinitions": {
           "parameters": {
             "input_1": {
-              "type": 0
+              "type": "STRING"
             },
             "input_2": {
-              "type": 2
+              "type": "DOUBLE"
             },
             "input_3": {
-              "type": 0
+              "type": "STRING"
             },
             "input_4": {
-              "type": 0
+              "type": "STRING"
             }
           }
         },
@@ -95,7 +96,7 @@
           },
           "parameters": {
             "output_1": {
-              "type": 1
+              "type": "INT"
             }
           }
         }
@@ -235,17 +236,26 @@
       "inputDefinitions": {
         "parameters": {
           "input1": {
-            "type": 0
+            "type": "STRING"
           },
           "input3": {
-            "type": 0
+            "type": "STRING"
           },
           "input4": {
-            "type": 0
+            "type": "STRING"
           }
         }
       }
     },
     "schemaVersion": "2.0.0",
     "sdkVersion": "kfp-1.6.0-rc.0"
+  },
+  "runtimeConfig": {
+    "gcsOutputDirectory": "dummy_root",
+    "parameters": {
+      "input4": {
+        "stringValue": ""
+      }
+    }
   }
+}
