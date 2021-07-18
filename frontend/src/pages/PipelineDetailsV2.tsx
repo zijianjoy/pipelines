@@ -293,6 +293,7 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       'xgboost_sample_pipeline.json',
       'pipeline_with_various_io_types.json',
       'pipeline_with_ontology.json',
+      'lightweight_python_functions_v2_pipeline.json',
     ];
 
     return (

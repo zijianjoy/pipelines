@@ -2,7 +2,7 @@ import { Edge, Elements, FlowElement, Node, isNode, Position } from 'react-flow-
 import { PipelineSpec } from 'src/third_party/pipeline_spec';
 import dagre from 'dagre';
 
-const nodeWidth = 150;
+const nodeWidth = 140;
 const nodeHeight = 100;
 
 function convertToFlowElements(spec: PipelineSpec): Elements {
@@ -27,7 +27,12 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
       id: 'task-' + key,
       data: { label: name },
       position: { x: 100, y: 200 },
-      style: { color: 'white', backgroundColor: '#00BBF9', borderColor: 'transparent' },
+      style: {
+        color: 'white',
+        backgroundColor: '#00BBF9',
+        borderColor: 'transparent',
+        borderRadius: '30px',
+      },
     };
     result.push(node);
     const componentRef = taskSpec.getComponentRef();
@@ -51,7 +56,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
         id: 'artifact-' + componentToTask.get(componentKey) + '-' + artifactKey,
         data: { label: artifactSpec.getArtifactType()?.getSchemaTitle() + ': ' + artifactKey },
         position: { x: 300, y: 200 },
-        style: { backgroundColor: '#FFEF9F', borderColor: 'transparent' }, // FF99C8  D0F4DE  E4C1F9
+        style: { backgroundColor: '#fff59d', borderColor: 'transparent' }, // FF99C8  D0F4DE  E4C1F9
       };
       result.push(node);
     });
@@ -96,6 +101,60 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
         animated: true,
       };
       result.push(edge);
+    });
+  });
+
+  const edgeKeys = new Map<String, Edge>();
+  // Input Parameters: inputs => parameters => taskOutputParameter => producerTask
+  tasksMap.forEach((taskSpec, inputTaskKey) => {
+    const inputs = taskSpec.getInputs();
+    if (!inputs) {
+      return;
+    }
+    const parameters = inputs.getParametersMap();
+    parameters.forEach((paramSpec, paramName) => {
+      const taskOutputParameter = paramSpec.getTaskOutputParameter();
+      if (taskOutputParameter) {
+        const producerTask = taskOutputParameter.getProducerTask();
+        const edgeId = 'edge-' + producerTask + '-' + inputTaskKey;
+        if (edgeKeys.has(edgeId)) {
+          return;
+        }
+
+        const edge: Edge = {
+          // id is combination of producerTask+inputTask
+          id: edgeId,
+          source: 'task-' + producerTask,
+          target: 'task-' + inputTaskKey,
+          animated: true,
+        };
+        result.push(edge);
+        edgeKeys.set(edgeId, edge);
+      }
+    });
+  });
+
+  // DependentTasks: task => dependentTasks list
+  tasksMap.forEach((taskSpec, inputTaskKey) => {
+    const dependentTasks = taskSpec.getDependentTasksList();
+    if (!dependentTasks) {
+      return;
+    }
+    dependentTasks.forEach(upStreamTaskName => {
+      const edgeId = 'edge-' + upStreamTaskName + '-' + inputTaskKey;
+      if (edgeKeys.has(edgeId)) {
+        return;
+      }
+
+      const edge: Edge = {
+        // id is combination of producerTask+inputTask
+        id: edgeId,
+        source: 'task-' + upStreamTaskName,
+        target: 'task-' + inputTaskKey,
+        animated: true,
+      };
+      result.push(edge);
+      edgeKeys.set(edgeId, edge);
     });
   });
 
