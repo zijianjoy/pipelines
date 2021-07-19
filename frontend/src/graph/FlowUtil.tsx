@@ -5,6 +5,7 @@ import dagre from 'dagre';
 const nodeWidth = 140;
 const nodeHeight = 100;
 
+const onChange = () => {};
 function convertToFlowElements(spec: PipelineSpec): Elements {
   let result: FlowElement[] = [];
   const componentToTask: Map<string, string> = new Map();
@@ -26,6 +27,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
     const node: Node = {
       id: 'task-' + key,
       data: { label: name },
+      // data: { onChange: onChange, color: '#111111' },
       position: { x: 100, y: 200 },
       style: {
         color: 'white',
@@ -33,6 +35,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
         borderColor: 'transparent',
         borderRadius: '30px',
       },
+      // type: 'subNode',
     };
     result.push(node);
     const componentRef = taskSpec.getComponentRef();
@@ -191,7 +194,6 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
         y: nodeWithPosition.y - nodeHeight / 2,
       };
     }
-
     return el;
   });
 
