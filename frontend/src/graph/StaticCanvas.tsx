@@ -36,7 +36,7 @@ const StaticCanvas = ({ elements }: StaticCanvas) => {
       >
         <MiniMap />
         <Controls />
-        {/* <Background /> */}
+        <Background />
       </ReactFlow>
     </ReactFlowProvider>
   );

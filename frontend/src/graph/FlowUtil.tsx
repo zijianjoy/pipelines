@@ -1,21 +1,32 @@
 import { Edge, Elements, FlowElement, Node, isNode, Position } from 'react-flow-renderer';
 import { PipelineSpec } from 'src/third_party/pipeline_spec';
 import dagre from 'dagre';
+import { ComponentRef, ComponentSpec } from 'src/third_party/pipeline_spec/pipeline_spec_pb';
+import * as jspb from 'google-protobuf';
 
 const nodeWidth = 140;
 const nodeHeight = 100;
 
-const onChange = () => {};
 function convertToFlowElements(spec: PipelineSpec): Elements {
-  let result: FlowElement[] = [];
-  const componentToTask: Map<string, string> = new Map();
-
   // Find all tasks --> nodes
   const root = spec.getRoot();
   if (!root) {
     throw new Error('root not found in pipeline spec.');
   }
-  const dag = root.getDag();
+
+  const componentsMap = spec.getComponentsMap();
+
+  return buildDag(root, componentsMap);
+}
+
+function buildDag(
+  componentSpec: ComponentSpec,
+  componentsMap: jspb.Map<string, ComponentSpec>,
+): Elements {
+  let flowGraph: FlowElement[] = [];
+  const componentToTask: Map<string, string> = new Map();
+
+  const dag = componentSpec.getDag();
   if (!dag) {
     throw new Error('dag not found in pipeline spec.');
   }
@@ -24,23 +35,45 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
   tasksMap.forEach((taskSpec, key) => {
     const name = taskSpec?.getTaskInfo()?.getName();
     console.log(name);
-    const node: Node = {
-      id: 'task-' + key,
-      data: { label: name },
-      // data: { onChange: onChange, color: '#111111' },
-      position: { x: 100, y: 200 },
-      style: {
-        color: 'white',
-        backgroundColor: '#00BBF9',
-        borderColor: 'transparent',
-        borderRadius: '30px',
-      },
-      // type: 'subNode',
-    };
-    result.push(node);
     const componentRef = taskSpec.getComponentRef();
-    if (!!componentRef) {
-      componentToTask.set(componentRef.getName(), key);
+    if (componentRef === undefined) {
+      console.log('ComponentRef not found for task: ' + key);
+      return;
+    }
+    const componentRefName = componentRef.getName();
+    if (!componentsMap.has(componentRefName)) {
+      console.log('Cannot find componentRef name from components Map: ' + componentRefName);
+      return;
+    }
+    componentToTask.set(componentRefName, key);
+    const component = componentsMap.get(componentRefName);
+    if (component === undefined) {
+      console.log('Component undefined for componentRef name: ' + componentRefName);
+      return;
+    }
+    // Component can be either an executor or subDAG,
+    // If this is executor, add the node directly.
+    // If subDAG, needs to handle differently.
+    if (component.getExecutorLabel().length > 0) {
+      // executor label means this is a single node.
+      const node: Node = {
+        id: 'task-' + key,
+        data: { label: name },
+        // data: { onChange: onChange, color: '#111111' },
+        position: { x: 100, y: 200 },
+        style: {
+          color: 'white',
+          backgroundColor: '#00BBF9',
+          borderColor: 'transparent',
+          borderRadius: '30px',
+        },
+        // type: 'subNode',
+      };
+      flowGraph.push(node);
+    } else if (component.hasDag()) {
+      buildSubDag(componentRefName, component, componentsMap, 'root/', flowGraph);
+    } else {
+      console.log('Component ' + componentRefName + ' neither has `executorLabel` nor `dag`');
     }
   });
 
@@ -48,8 +81,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
   // Input: components -> key/value -> inputDefinitions -> artifacts -> name/key
   // Output: components -> key/value -> outputDefinitions -> artifacts -> name/key
   // Calculate Output for now.
-  const components = spec.getComponentsMap();
-  components.forEach((componentSpec, componentKey) => {
+  componentsMap.forEach((componentSpec, componentKey) => {
     const outputDefinitions = componentSpec.getOutputDefinitions();
     if (!outputDefinitions) return;
     const artifacts = outputDefinitions.getArtifactsMap();
@@ -61,13 +93,13 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
         position: { x: 300, y: 200 },
         style: { backgroundColor: '#fff59d', borderColor: 'transparent' }, // FF99C8  D0F4DE  E4C1F9
       };
-      result.push(node);
+      flowGraph.push(node);
     });
   });
 
   // Find output and input artifacts --> edges
   // Task to Artifact: components -> key/value -> outputDefinitions -> artifacts -> key
-  components.forEach((componentSpec, componentKey) => {
+  componentsMap.forEach((componentSpec, componentKey) => {
     const outputDefinitions = componentSpec.getOutputDefinitions();
     if (!outputDefinitions) return;
     const artifacts = outputDefinitions.getArtifactsMap();
@@ -78,7 +110,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
         target: 'artifact-' + componentToTask.get(componentKey) + '-' + artifactKey,
         animated: true,
       };
-      result.push(edge);
+      flowGraph.push(edge);
     });
   });
   // Artifact to Task: root -> dag -> tasks -> key/value -> inputs -> artifacts -> key/value
@@ -103,7 +135,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
         target: 'task-' + inputTaskKey,
         animated: true,
       };
-      result.push(edge);
+      flowGraph.push(edge);
     });
   });
 
@@ -131,7 +163,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
           target: 'task-' + inputTaskKey,
           animated: true,
         };
-        result.push(edge);
+        flowGraph.push(edge);
         edgeKeys.set(edgeId, edge);
       }
     });
@@ -156,7 +188,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
         target: 'task-' + inputTaskKey,
         animated: true,
       };
-      result.push(edge);
+      flowGraph.push(edge);
       edgeKeys.set(edgeId, edge);
     });
   });
@@ -170,7 +202,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
   dagreGraph.setDefaultEdgeLabel(() => ({}));
   dagreGraph.setGraph({ rankdir: 'TB' });
 
-  result.forEach(el => {
+  flowGraph.forEach(el => {
     if (isNode(el)) {
       dagreGraph.setNode(el.id, { width: nodeWidth, height: nodeHeight });
     } else {
@@ -180,7 +212,7 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
 
   dagre.layout(dagreGraph);
 
-  result = result.map(el => {
+  flowGraph = flowGraph.map(el => {
     if (isNode(el)) {
       const nodeWithPosition = dagreGraph.node(el.id);
       el.sourcePosition = Position.Bottom;
@@ -197,6 +229,60 @@ function convertToFlowElements(spec: PipelineSpec): Elements {
     return el;
   });
 
-  return result;
+  return flowGraph;
 }
+
+function buildSubDag(
+  componentName: string,
+  componentSpec: ComponentSpec,
+  componentsMap: jspb.Map<string, ComponentSpec>,
+  namespace: string,
+  flowGraph: FlowElement[],
+) {
+  const dag = componentSpec.hasDag();
+  // Iterates taskMap for all tasks within subDAG.
+
+  // Nodes:
+  // 1. Create subDAG entry node
+  // Add task node with prefix, prefix is layered with ancestor component names.
+  // Example: root/component1/component2/
+  //     Determine the type of this sub DAG:
+  //          1. if condition
+  //          2. for loop
+  //          3. another pipeline.
+  // 2. Create subDAG exit node
+  const entryNode: Node = {
+    id: namespace + 'componententry-' + componentName,
+    data: { label: 'Component Entry: ' + componentName },
+    position: { x: 300, y: 200 },
+    style: {}, // FF99C8  D0F4DE  E4C1F9
+  };
+  const exitNode: Node = {
+    id: namespace + 'componentexit-' + componentName,
+    data: { label: 'Component Exit: ' + componentName },
+    position: { x: 300, y: 200 },
+    style: {}, // FF99C8  D0F4DE  E4C1F9
+  };
+  flowGraph.push(entryNode);
+  flowGraph.push(exitNode);
+
+  // Iterate:
+  // Find componentRef for each task.
+  // If componentRef is a exectuorLabel, draw a node.
+  // If componentRef is a DAG:
+  //     Create output artifact nodes
+  //     Call buildSubDag iteratively. (need to think more on boundary cases)
+
+  // Edges:
+  // From outside the DAG component to inside:
+  // parameters(executions) and artifact  => subDAG entry component
+  // subDAG entry component               => output artifact and parameter(executions)
+  // parameters(executions) and artifact  => subDAG exit component
+  // subDAG exit component                => exterior artifact and parameter(executions)
+
+  // How do we pass the output artifact and parameter to exterior nodes?
+
+  // We might want to draw a loop around entry node and exit node, so we can signal a sub-DAG area on canvas.
+}
+
 export default { convertToFlowElements };
