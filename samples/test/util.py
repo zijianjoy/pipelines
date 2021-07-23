@@ -50,6 +50,7 @@ class TestCase:
     '''Test case for running a KFP sample'''
     pipeline_func: Callable
     mode: kfp.dsl.PipelineExecutionMode = kfp.dsl.PipelineExecutionMode.V2_COMPATIBLE
+    enable_caching: bool = False
     arguments: Optional[Dict[str, str]] = None
     verify_func: Callable[[
         int, kfp_server_api.ApiRun, kfp_server_api.
@@ -65,14 +66,16 @@ def run_pipeline_func(test_cases: List[TestCase]):
     """
 
     def test_wrapper(
-        run_pipeline: Callable[[Callable, kfp.dsl.PipelineExecutionMode, dict],
-                               kfp_server_api.ApiRunDetail],
+        run_pipeline: Callable[
+            [Callable, kfp.dsl.PipelineExecutionMode, bool, dict],
+            kfp_server_api.ApiRunDetail],
         mlmd_connection_config: metadata_store_pb2.MetadataStoreClientConfig,
     ):
         for case in test_cases:
             run_detail = run_pipeline(
                 pipeline_func=case.pipeline_func,
                 mode=case.mode,
+                enable_caching=case.enable_caching,
                 arguments=case.arguments or {}
             )
             pipeline_runtime: kfp_server_api.ApiPipelineRuntime = run_detail.pipeline_runtime
@@ -159,8 +162,10 @@ def _run_test(callback):
             pipeline_func: Callable,
             mode: kfp.dsl.PipelineExecutionMode = kfp.dsl.PipelineExecutionMode.
             V2_COMPATIBLE,
-            arguments: dict = {},
+            enable_caching: bool = False,
+            arguments: Optional[dict] = None,
         ) -> kfp_server_api.ApiRunDetail:
+            arguments = arguments or {}
             extra_arguments = {}
             if mode != kfp.dsl.PipelineExecutionMode.V1_LEGACY:
                 extra_arguments = {
@@ -177,6 +182,7 @@ def _run_test(callback):
                     },
                     launcher_image=launcher_image,
                     experiment_name=experiment,
+                    enable_caching=enable_caching,
                 )
 
             run_result = _retry_with_backoff(fn=_create_run)
@@ -218,6 +224,20 @@ def _run_test(callback):
     fire.Fire(main)
 
 
+def simplify_proto_struct(data: dict) -> dict:
+    res = {}
+    for key, value in data.items():
+        if value.get('stringValue') is not None:
+            res[key] = value['stringValue']
+        elif value.get('doubleValue') is not None:
+            res[key] = value['doubleValue']
+        elif value.get('structValue') is not None:
+            res[key] = value['structValue']
+        else:
+            res[key] = value
+    return res
+
+
 @dataclass
 class KfpArtifact:
     name: str
@@ -237,7 +257,9 @@ class KfpArtifact:
         artifact_name = mlmd_event.path.steps[0].key
         # The original field is custom_properties, but MessageToDict converts it
         # to customProperties.
-        metadata = MessageToDict(mlmd_artifact).get('customProperties', {})
+        metadata = simplify_proto_struct(
+            MessageToDict(mlmd_artifact).get('customProperties', {})
+        )
         return cls(
             name=artifact_name,
             type=mlmd_artifact_type.name,
@@ -263,6 +285,7 @@ class KfpTask:
     '''A KFP runtime task'''
     name: str
     type: str
+    state: int
     inputs: TaskInputs
     outputs: TaskOutputs
 
@@ -323,6 +346,7 @@ class KfpTask:
         return cls(
             name=execution.custom_properties.get('task_name').string_value,
             type=execution_type.name,
+            state=execution.last_known_state,
             inputs=TaskInputs(
                 parameters=params['inputs'], artifacts=input_artifacts
             ),
@@ -347,14 +371,14 @@ class KfpMlmdClient:
             )
         self.mlmd_store = metadata_store.MetadataStore(mlmd_connection_config)
 
-    def get_tasks(self, argo_workflow_name: str):
+    def get_tasks(self, run_id: str):
         run_context = self.mlmd_store.get_context_by_type_and_name(
-            type_name='kfp.PipelineRun',
-            context_name=argo_workflow_name,
+            type_name='system.PipelineRun',
+            context_name=run_id,
         )
         if not run_context:
             raise Exception(
-                f'Cannot find kfp.PipelineRun context "{argo_workflow_name}"'
+                f'Cannot find system.PipelineRun context "{run_id}"'
             )
         logging.info(
             f'run_context: name={run_context.name} id={run_context.id}'
@@ -414,11 +438,11 @@ def _parse_parameters(execution: metadata_store_pb2.Execution) -> dict:
     for item in custom_properties.items():
         (name, value) = item
         raw_value = None
-        if value.string_value:
+        if value.HasField('string_value'):
             raw_value = value.string_value
-        if value.int_value:
+        if value.HasField('int_value'):
             raw_value = value.int_value
-        if value.double_value:
+        if value.HasField('double_value'):
             raw_value = value.double_value
         if name.startswith('input:'):
             parameters['inputs'][name[len('input:'):]] = raw_value

@@ -19,17 +19,15 @@ import kfp.dsl as dsl
 
 from .lightweight_python_functions_v2_pipeline import pipeline
 from .util import run_pipeline_func, TestCase, KfpMlmdClient
+from ml_metadata.proto import Execution
 
 
-def verify(
-    run: kfp_server_api.ApiRun, mlmd_connection_config, argo_workflow_name: str,
-    **kwargs
-):
+def verify(run: kfp_server_api.ApiRun, mlmd_connection_config, **kwargs):
     t = unittest.TestCase()
     t.maxDiff = None  # we always want to see full diff
     t.assertEqual(run.status, 'Succeeded')
     client = KfpMlmdClient(mlmd_connection_config=mlmd_connection_config)
-    tasks = client.get_tasks(argo_workflow_name=argo_workflow_name)
+    tasks = client.get_tasks(run_id=run.id)
 
     task_names = [*tasks.keys()]
     t.assertCountEqual(task_names, ['preprocess', 'train'], 'task names')
@@ -43,17 +41,22 @@ def verify(
             'inputs': {
                 'artifacts': [],
                 'parameters': {
-                    'message': 'message'
+                    'message': 'message',
+                    'empty_message': '',
                 }
             },
             'name': 'preprocess',
             'outputs': {
                 'artifacts': [{
-                    'metadata': {},
+                    'metadata': {
+                        'display_name': 'output_dataset_one'
+                    },
                     'name': 'output_dataset_one',
                     'type': 'system.Dataset'
                 }, {
-                    'metadata': {},
+                    'metadata': {
+                        'display_name': 'output_dataset_two'
+                    },
                     'name': 'output_dataset_two',
                     'type': 'system.Dataset'
                 }],
@@ -64,7 +67,8 @@ def verify(
                     'output_parameter': 'message'
                 }
             },
-            'type': 'kfp.ContainerExecution'
+            'type': 'system.ContainerExecution',
+            'state': Execution.State.COMPLETE,
         },
         preprocess.get_dict(),
     )
@@ -72,11 +76,15 @@ def verify(
         {
             'inputs': {
                 'artifacts': [{
-                    'metadata': {},
+                    'metadata': {
+                        'display_name': 'output_dataset_one'
+                    },
                     'name': 'dataset_one',
                     'type': 'system.Dataset'
                 }, {
-                    'metadata': {},
+                    'metadata': {
+                        'display_name': 'output_dataset_two'
+                    },
                     'name': 'dataset_two',
                     'type': 'system.Dataset'
                 }],
@@ -92,16 +100,16 @@ def verify(
             'outputs': {
                 'artifacts': [{
                     'metadata': {
-                        'accuracy': {
-                            'doubleValue': 0.9
-                        }
+                        'display_name': 'model',
+                        'accuracy': 0.9,
                     },
                     'name': 'model',
                     'type': 'system.Model'
                 }],
                 'parameters': {}
             },
-            'type': 'kfp.ContainerExecution'
+            'type': 'system.ContainerExecution',
+            'state': Execution.State.COMPLETE,
         },
         train.get_dict(),
     )

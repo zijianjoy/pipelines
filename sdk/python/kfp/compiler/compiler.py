@@ -953,9 +953,6 @@ class Compiler(object):
     from ._data_passing_rewriter import fix_big_data_passing
     workflow = fix_big_data_passing(workflow)
 
-    workflow = _data_passing_rewriter.add_pod_name_passing(
-        workflow, str(self._pipeline_root_param or None))
-
     if pipeline_conf and pipeline_conf.data_passing_method != None:
       workflow = pipeline_conf.data_passing_method(workflow)
 
@@ -1037,8 +1034,13 @@ class Compiler(object):
 
     if self._mode == dsl.PipelineExecutionMode.V2_COMPATIBLE:
       pipeline_name = getattr(pipeline_func, '_component_human_name', '')
+      # pipeline names have one of the following formats:
+      # * pipeline/<name>
+      # * namespace/<ns>/pipeline/<name>
+      # when compiling, we will only have pipeline/<name>, but it will be overriden
+      # when uploading the pipeline to KFP API server.
       self._pipeline_name_param = dsl.PipelineParam(name='pipeline-name',
-                                                    value=pipeline_name)
+                                                    value=f'pipeline/{pipeline_name}')
 
     import kfp
     type_check_old_value = kfp.TYPE_CHECK
@@ -1146,7 +1148,7 @@ Please create a new issue at https://github.com/kubeflow/pipelines/issues attach
             container:
               image: docker/whalesay:latest""")
     except:
-      warnings.warn("Cannot validate the compiled workflow. Found the argo program in PATH, but it's not usable. argo v2.4.3 should work.")
+      warnings.warn("Cannot validate the compiled workflow. Found the argo program in PATH, but it's not usable. argo CLI v3.1.1+ should work.")
 
     if has_working_argo_lint:
       _run_argo_lint(yaml_text)
@@ -1158,7 +1160,7 @@ def _run_argo_lint(yaml_text: str):
   import subprocess
   argo_path = shutil.which('argo')
   if argo_path:
-    result = subprocess.run([argo_path, 'lint', '/dev/stdin'], input=yaml_text.encode('utf-8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run([argo_path, '--offline=true', 'lint', '/dev/stdin'], input=yaml_text.encode('utf-8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode:
       if re.match(
           pattern=r'.+failed to resolve {{tasks\..+\.outputs\.artifacts\..+}}.+',

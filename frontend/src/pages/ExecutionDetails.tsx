@@ -17,14 +17,8 @@
 import { CircularProgress } from '@material-ui/core';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import { getArtifactName, getLinkedArtifactsByEvents } from 'src/mlmd/MlmdUtils';
-import {
-  Api,
-  ExecutionCustomProperties,
-  ExecutionProperties,
-  getArtifactTypes,
-  getResourceProperty,
-} from 'src/mlmd/library';
+import { ExecutionHelpers, getArtifactName, getLinkedArtifactsByEvents } from 'src/mlmd/MlmdUtils';
+import { Api, getArtifactTypes } from 'src/mlmd/library';
 import {
   ArtifactType,
   Event,
@@ -39,7 +33,7 @@ import { classes, stylesheet } from 'typestyle';
 import { ResourceInfo, ResourceType } from '../components/ResourceInfo';
 import { RoutePage, RoutePageFactory, RouteParams } from '../components/Router';
 import { ToolbarProps } from '../components/Toolbar';
-import { commonCss, padding } from '../Css';
+import { color, commonCss, padding } from '../Css';
 import { logger, serviceErrorToString } from '../lib/Utils';
 import { Page, PageErrorHandler } from './Page';
 
@@ -78,7 +72,7 @@ export default class ExecutionDetails extends Page<{}, ExecutionDetailsState> {
     return {
       actions: {},
       breadcrumbs: [{ displayName: 'Executions', href: RoutePage.EXECUTIONS }],
-      pageTitle: `${this.id} details`,
+      pageTitle: `Execution #${this.id}`,
     };
   }
 
@@ -209,10 +203,7 @@ export class ExecutionDetailsContent extends Component<
       }
 
       const execution = executionResponse.getExecutionsList()[0];
-      const executionName =
-        getResourceProperty(execution, ExecutionProperties.COMPONENT_ID) ||
-        getResourceProperty(execution, ExecutionCustomProperties.TASK_ID, true);
-      this.props.onTitleUpdate(executionName ? executionName.toString() : '');
+      this.props.onTitleUpdate(ExecutionHelpers.getName(execution));
 
       const typeRequest = new GetExecutionTypesByIDRequest();
       typeRequest.setTypeIdsList([execution.getTypeId()]);
@@ -380,20 +371,12 @@ const ArtifactRow: React.FC<{ id: number; name: string; type?: string; uri: stri
   type,
   uri,
 }) => (
-  <tr>
+  <tr className={css.row}>
+    <td className={css.tableCell}>{id}</td>
     <td className={css.tableCell}>
       {id ? (
         <Link className={commonCss.link} to={RoutePageFactory.artifactDetails(id)}>
-          {id}
-        </Link>
-      ) : (
-        id
-      )}
-    </td>
-    <td className={css.tableCell}>
-      {id ? (
-        <Link className={commonCss.link} to={RoutePageFactory.artifactDetails(id)}>
-          {name}
+          {name ? name : '(No name)'}
         </Link>
       ) : (
         name
@@ -408,5 +391,18 @@ const css = stylesheet({
   tableCell: {
     padding: 6,
     textAlign: 'left',
+  },
+  row: {
+    $nest: {
+      '&:hover': {
+        backgroundColor: color.whiteSmoke,
+      },
+      '&:hover a': {
+        color: color.linkLight,
+      },
+      a: {
+        color: color.link,
+      },
+    },
   },
 });
