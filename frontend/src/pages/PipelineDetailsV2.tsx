@@ -53,8 +53,9 @@ import PipelineIRDialog from './PipelineIRDialog';
 import protobuf from 'protobufjs';
 import { PipelineJob, PipelineSpec } from 'src/third_party/pipeline_spec';
 import StaticCanvas from 'src/graph/StaticCanvas';
-import { Elements } from 'react-flow-renderer';
-import FlowUtil from 'src/graph/FlowUtil';
+import { Elements, Node } from 'react-flow-renderer';
+import FlowUtil, { TaskType } from 'src/graph/FlowUtil';
+import SubDagNamespace from 'src/graph/SubDagNamespace';
 
 interface PipelineDetailsState {
   graph: dagre.graphlib.Graph | null;
@@ -70,7 +71,9 @@ interface PipelineDetailsState {
   versions: ApiPipelineVersion[];
   showReducedGraph: boolean;
   pipelineIR: string;
+  pipelineSpec: PipelineSpec | null;
   elements: Elements;
+  namespaces: string[];
 }
 
 const summaryCardWidth = 500;
@@ -143,7 +146,9 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       versions: [],
       showReducedGraph: false,
       pipelineIR: '',
+      pipelineSpec: null,
       elements: [],
+      namespaces: [],
     };
   }
 
@@ -211,6 +216,8 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       showReducedGraph,
       pipelineIR,
       elements,
+      namespaces,
+      pipelineSpec,
     } = this.state;
 
     const graphToShow =
@@ -230,7 +237,7 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
     const updateGraph = (spec: PipelineSpec) => {
       const newelements = FlowUtil.convertToFlowElements(spec);
 
-      this.setStateSafe({ elements: newelements });
+      this.setStateSafe({ pipelineSpec: spec, elements: newelements, namespaces: ['root'] });
     };
     const onSubmit = (content: string) => {
       this.setStateSafe({ pipelineIR: content });
@@ -277,6 +284,20 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       });
     };
 
+    const doubleClickNode = (node: Node) => {
+      if (node.data['taskType'] !== TaskType.DAG) {
+        return;
+      }
+      const newNamespaces = [...namespaces, node.id];
+      const newElements = FlowUtil.convertSubDagToFlowElements(pipelineSpec!, newNamespaces);
+      this.setStateSafe({ namespaces: newNamespaces, elements: newElements });
+    };
+
+    const setNamespaces = (n: string[]) => {
+      const newElements = FlowUtil.convertSubDagToFlowElements(pipelineSpec!, n);
+      this.setStateSafe({ namespaces: n, elements: newElements });
+    };
+
     const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
       const filename = event.target.value;
 
@@ -294,6 +315,11 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       'pipeline_with_various_io_types.json',
       'pipeline_with_ontology.json',
       'lightweight_python_functions_v2_pipeline.json',
+      'pipeline_with_if_placeholder.json',
+      'pipeline_with_loops_and_conditions.json',
+      'pipeline_with_nested_conditions_yaml.json',
+      'pipeline_with_nested_conditions.json',
+      'pipeline_with_nested_loops.json',
     ];
 
     return (
@@ -308,7 +334,12 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
             </select>
             <div className={commonCss.page}>
               <div className={commonCss.page} style={{ position: 'relative', overflow: 'hidden' }}>
-                <StaticCanvas elements={this.state.elements}></StaticCanvas>
+                <StaticCanvas
+                  elements={this.state.elements}
+                  namespaces={this.state.namespaces}
+                  doubleClickNode={doubleClickNode}
+                  setNamespaces={setNamespaces}
+                ></StaticCanvas>
                 {/* <div>{pipelineIR}</div> */}
               </div>
               {graphToShow && (
