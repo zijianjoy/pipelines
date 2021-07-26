@@ -169,6 +169,7 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       .newPipelineVersion('Upload version', () =>
         pipelineIdFromParams ? pipelineIdFromParams : '',
       );
+    // .submitPipeline('Submit Pipeline', (content:string) => {onSubmit(content)});
 
     if (fromRunId) {
       return {
@@ -326,12 +327,18 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       <div className={classes(commonCss.page, padding(20, 't'))}>
         <div className={commonCss.page}>
           <div className={commonCss.page}>
-            <PipelineIRDialog onSubmit={onSubmit}></PipelineIRDialog>
-            <select onChange={handleSelectChange}>
-              {samples.map(sample => {
-                return <option value={sample}>{sample}</option>;
-              })}
-            </select>
+            <div style={{ display: 'flex', flexFlow: 'row wrap', justifyContent: 'flex-start' }}>
+              <div style={{ margin: 'auto' }}>
+                <select onChange={handleSelectChange}>
+                  {samples.map(sample => {
+                    return <option value={sample}>{sample}</option>;
+                  })}
+                </select>
+              </div>
+              <div style={{ margin: 'auto' }}>
+                <PipelineIRDialog onSubmit={onSubmit}></PipelineIRDialog>
+              </div>
+            </div>
             <div className={commonCss.page}>
               <div className={commonCss.page} style={{ position: 'relative', overflow: 'hidden' }}>
                 <StaticCanvas

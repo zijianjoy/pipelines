@@ -37,6 +37,7 @@ export enum ButtonKeys {
   ENABLE_RECURRING_RUN = 'enableRecurringRun',
   EXPAND = 'expand',
   NEW_EXPERIMENT = 'newExperiment',
+  SUBMIT_PIPELINE = 'submitPipeline',
   NEW_PIPELINE_VERSION = 'newPipelineVersion',
   NEW_RUN = 'newRun',
   NEW_RECURRING_RUN = 'newRecurringRun',
@@ -309,6 +310,19 @@ export default class Buttons {
     };
     return this;
   }
+
+  // public submitPipeline(label: string, ): Buttons {
+  //   this._map[ButtonKeys.NEW_PIPELINE_VERSION] = {
+  //     action: () => this._createNewPipelineVersion(getPipelineId ? getPipelineId() : ''),
+  //     icon: AddIcon,
+  //     id: 'createPipelineVersionBtn',
+  //     outlined: true,
+  //     style: { minWidth: 160 },
+  //     title: label,
+  //     tooltip: 'Upload pipeline version',
+  //   };
+  //   return this;
+  // }
 
   public refresh(action: () => void): Buttons {
     this._map[ButtonKeys.REFRESH] = {
