@@ -74,6 +74,7 @@ interface PipelineDetailsState {
   pipelineSpec: PipelineSpec | null;
   elements: Elements;
   namespaces: string[];
+  isSidePanelOpen: boolean;
 }
 
 const summaryCardWidth = 500;
@@ -149,6 +150,7 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       pipelineSpec: null,
       elements: [],
       namespaces: [],
+      isSidePanelOpen: false,
     };
   }
 
@@ -219,6 +221,7 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       elements,
       namespaces,
       pipelineSpec,
+      isSidePanelOpen,
     } = this.state;
 
     const graphToShow =
@@ -285,6 +288,10 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
       });
     };
 
+    const onClickNode = (node: Node) => {
+      this.setStateSafe({ isSidePanelOpen: true });
+    };
+
     const doubleClickNode = (node: Node) => {
       if (node.data['taskType'] !== TaskType.DAG) {
         return;
@@ -344,10 +351,27 @@ class PipelineDetailsV2 extends Page<{}, PipelineDetailsState> {
                 <StaticCanvas
                   elements={this.state.elements}
                   namespaces={this.state.namespaces}
+                  onClickNode={onClickNode}
                   doubleClickNode={doubleClickNode}
                   setNamespaces={setNamespaces}
                 ></StaticCanvas>
                 {/* <div>{pipelineIR}</div> */}
+                <SidePanel
+                  isOpen={isSidePanelOpen}
+                  title={selectedNodeId}
+                  onClose={() => this.setStateSafe({ isSidePanelOpen: false })}
+                >
+                  <div className={commonCss.page}>
+                    {/* {!selectedNodeInfo && (
+                    <div className={commonCss.absoluteCenter}>Unable to retrieve node info</div>
+                  )} */}
+                    {!!selectedNodeInfo && (
+                      <div className={padding(20, 'lr')}>
+                        <StaticNodeDetails nodeInfo={selectedNodeInfo} />
+                      </div>
+                    )}
+                  </div>
+                </SidePanel>
               </div>
               {graphToShow && (
                 <div

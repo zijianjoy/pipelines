@@ -44,7 +44,7 @@ const css = stylesheet({
     position: 'absolute !important' as any,
     right: 0,
     top: 0,
-    zIndex: zIndex.SIDE_PANEL,
+    zIndex: zIndex.SIDE_PANEL_V2,
   },
 });
 

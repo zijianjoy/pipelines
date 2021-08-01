@@ -69,6 +69,7 @@ export const zIndex = {
   BUSY_OVERLAY: 2,
   PIPELINE_SUMMARY_CARD: 2,
   SIDE_PANEL: 2,
+  SIDE_PANEL_V2: 6,
 };
 
 export const fontsize = {

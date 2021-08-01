@@ -31,11 +31,18 @@ const nodeTypes = {
 export interface StaticCanvas {
   elements: Elements;
   namespaces: string[];
+  onClickNode: (node: Node) => void;
   doubleClickNode: (node: Node) => void;
   setNamespaces: (namespaces: string[]) => void;
 }
 
-const StaticCanvas = ({ elements, namespaces, doubleClickNode, setNamespaces }: StaticCanvas) => {
+const StaticCanvas = ({
+  elements,
+  namespaces,
+  onClickNode,
+  doubleClickNode,
+  setNamespaces,
+}: StaticCanvas) => {
   return (
     <>
       <SubDagNamespace namespaces={namespaces} setNamespaces={setNamespaces}></SubDagNamespace>
@@ -50,6 +57,7 @@ const StaticCanvas = ({ elements, namespaces, doubleClickNode, setNamespaces }: 
           onElementClick={(event, element) => {
             console.log(event);
             console.log(element);
+            onClickNode(element as Node);
           }}
           onNodeDoubleClick={(event, element) => {
             doubleClickNode(element as Node);
