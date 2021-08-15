@@ -8,25 +8,21 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'react-flow-renderer';
 import 'src/build/tailwind.output.css';
-import ExecutionNodeFailed from 'src/components/graph/ExecutionNodeFailed';
-import ExecutionNodePending from 'src/components/graph/ExecutionNodePending';
 import { color } from 'src/Css';
-import ExecutionNode from '../../components/graph/ExecutionNode';
+import ArtifactNode from '../../components/graph/ArtifactNode';
 
-import './ExecutionNode.css';
+import './ArtifactNode.css';
 
 const nodeTypes = {
-  execution: ExecutionNode,
-  executionPending: ExecutionNodePending,
-  executionFailed: ExecutionNodeFailed,
+  artifact: ArtifactNode,
 };
 
-interface WrappedExecutionNodeProps {
+interface WrappedArtifactNodeProps {
   id: string;
   displayName: string;
 }
 
-function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
+function WrappedArtifactNode({ displayName }: WrappedArtifactNodeProps) {
   const onLoad = (reactFlowInstance: OnLoadParams) => {
     reactFlowInstance.fitView();
   };
@@ -34,9 +30,9 @@ function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
   const elements = [
     {
       id: '2',
-      type: 'execution',
+      type: 'artifact',
       position: { x: 100, y: 100 },
-      data: { text: 'An execution node', displayName },
+      data: { text: 'An ArtifactNode node', displayName },
     },
   ];
 
@@ -65,25 +61,25 @@ function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
 }
 
 export default {
-  title: 'v2/ExecutionNode',
-  component: WrappedExecutionNode,
+  title: 'v2/ArtifactNode',
+  component: WrappedArtifactNode,
   argTypes: {
     backgroundColor: { control: 'color' },
   },
-} as ComponentMeta<typeof WrappedExecutionNode>;
+} as ComponentMeta<typeof WrappedArtifactNode>;
 
-const Template: ComponentStory<typeof WrappedExecutionNode> = args => (
-  <WrappedExecutionNode {...args} />
+const Template: ComponentStory<typeof WrappedArtifactNode> = args => (
+  <WrappedArtifactNode {...args} />
 );
 
 export const Primary = Template.bind({});
 Primary.args = {
   id: 'id',
-  displayName: 'This is an ExecutionNode',
+  displayName: 'This is an ArtifactNode',
 };
 
 export const Secondary = Template.bind({});
 Secondary.args = {
   id: 'id',
-  displayName: 'This is an ExecutionNode with long name',
+  displayName: 'This is an ArtifactNode with long name',
 };

@@ -1,12 +1,6 @@
 import { ComponentMeta, ComponentStory } from '@storybook/react';
 import React from 'react';
-import ReactFlow, {
-  Background,
-  Controls,
-  MiniMap,
-  OnLoadParams,
-  ReactFlowProvider,
-} from 'react-flow-renderer';
+import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider } from 'react-flow-renderer';
 import 'src/build/tailwind.output.css';
 import ExecutionNodeFailed from 'src/components/graph/ExecutionNodeFailed';
 import ExecutionNodePending from 'src/components/graph/ExecutionNodePending';
@@ -21,25 +15,28 @@ const nodeTypes = {
   executionFailed: ExecutionNodeFailed,
 };
 
-interface WrappedExecutionNodeProps {
-  id: string;
-  displayName: string;
-}
+const elements = [
+  {
+    id: '2',
+    type: 'execution',
+    position: { x: 100, y: 100 },
+    data: { text: 'An execution node' },
+  },
+  {
+    id: '3',
+    type: 'executionPending',
+    position: { x: 100, y: 200 },
+    data: { text: 'A pending node' },
+  },
+  {
+    id: '4',
+    type: 'executionFailed',
+    position: { x: 100, y: 300 },
+    data: { text: 'A failed node' },
+  },
+];
 
-function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
-  const onLoad = (reactFlowInstance: OnLoadParams) => {
-    reactFlowInstance.fitView();
-  };
-
-  const elements = [
-    {
-      id: '2',
-      type: 'execution',
-      position: { x: 100, y: 100 },
-      data: { text: 'An execution node', displayName },
-    },
-  ];
-
+function WrappedNodeGallery({}) {
   return (
     <div
       // className='flex container mx-auto'
@@ -53,7 +50,6 @@ function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
           snapToGrid={true}
           nodeTypes={nodeTypes}
           edgeTypes={{}}
-          onLoad={onLoad}
         >
           <MiniMap />
           <Controls />
@@ -65,15 +61,15 @@ function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
 }
 
 export default {
-  title: 'v2/ExecutionNode',
-  component: WrappedExecutionNode,
+  title: 'v2/NodeGallery',
+  component: WrappedNodeGallery,
   argTypes: {
     backgroundColor: { control: 'color' },
   },
-} as ComponentMeta<typeof WrappedExecutionNode>;
+} as ComponentMeta<typeof WrappedNodeGallery>;
 
-const Template: ComponentStory<typeof WrappedExecutionNode> = args => (
-  <WrappedExecutionNode {...args} />
+const Template: ComponentStory<typeof WrappedNodeGallery> = args => (
+  <WrappedNodeGallery {...args} />
 );
 
 export const Primary = Template.bind({});
@@ -85,5 +81,5 @@ Primary.args = {
 export const Secondary = Template.bind({});
 Secondary.args = {
   id: 'id',
-  displayName: 'This is an ExecutionNode with long name',
+  displayName: 'This is an ExecutionNode',
 };

@@ -8,25 +8,21 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'react-flow-renderer';
 import 'src/build/tailwind.output.css';
-import ExecutionNodeFailed from 'src/components/graph/ExecutionNodeFailed';
-import ExecutionNodePending from 'src/components/graph/ExecutionNodePending';
 import { color } from 'src/Css';
-import ExecutionNode from '../../components/graph/ExecutionNode';
+import SubDagNode from '../../components/graph/SubDagNode';
 
-import './ExecutionNode.css';
+import './SubDagNode.css';
 
 const nodeTypes = {
-  execution: ExecutionNode,
-  executionPending: ExecutionNodePending,
-  executionFailed: ExecutionNodeFailed,
+  subDag: SubDagNode,
 };
 
-interface WrappedExecutionNodeProps {
+interface WrappedSubDagNodeProps {
   id: string;
   displayName: string;
 }
 
-function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
+function WrappedSubDagNode({ displayName }: WrappedSubDagNodeProps) {
   const onLoad = (reactFlowInstance: OnLoadParams) => {
     reactFlowInstance.fitView();
   };
@@ -34,9 +30,9 @@ function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
   const elements = [
     {
       id: '2',
-      type: 'execution',
+      type: 'subDag',
       position: { x: 100, y: 100 },
-      data: { text: 'An execution node', displayName },
+      data: { text: 'An SubDagNode node', displayName },
     },
   ];
 
@@ -65,25 +61,23 @@ function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
 }
 
 export default {
-  title: 'v2/ExecutionNode',
-  component: WrappedExecutionNode,
+  title: 'v2/SubDagNode',
+  component: WrappedSubDagNode,
   argTypes: {
     backgroundColor: { control: 'color' },
   },
-} as ComponentMeta<typeof WrappedExecutionNode>;
+} as ComponentMeta<typeof WrappedSubDagNode>;
 
-const Template: ComponentStory<typeof WrappedExecutionNode> = args => (
-  <WrappedExecutionNode {...args} />
-);
+const Template: ComponentStory<typeof WrappedSubDagNode> = args => <WrappedSubDagNode {...args} />;
 
 export const Primary = Template.bind({});
 Primary.args = {
   id: 'id',
-  displayName: 'This is an ExecutionNode',
+  displayName: 'This is a SubDagNode',
 };
 
 export const Secondary = Template.bind({});
 Secondary.args = {
   id: 'id',
-  displayName: 'This is an ExecutionNode with long name',
+  displayName: 'This is a SubDagNode with long name',
 };
