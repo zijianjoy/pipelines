@@ -23,20 +23,20 @@ const nodeTypes = {
 
 interface WrappedExecutionNodeProps {
   id: string;
-  displayName: string;
+  label: string;
 }
 
-function WrappedExecutionNode({ displayName }: WrappedExecutionNodeProps) {
+function WrappedExecutionNode({ id, label }: WrappedExecutionNodeProps) {
   const onLoad = (reactFlowInstance: OnLoadParams) => {
     reactFlowInstance.fitView();
   };
 
   const elements = [
     {
-      id: '2',
+      id: id,
       type: 'execution',
       position: { x: 100, y: 100 },
-      data: { text: 'An execution node', displayName },
+      data: { label },
     },
   ];
 
@@ -79,11 +79,11 @@ const Template: ComponentStory<typeof WrappedExecutionNode> = args => (
 export const Primary = Template.bind({});
 Primary.args = {
   id: 'id',
-  displayName: 'This is an ExecutionNode',
+  label: 'This is an ExecutionNode',
 };
 
 export const Secondary = Template.bind({});
 Secondary.args = {
   id: 'id',
-  displayName: 'This is an ExecutionNode with long name',
+  label: 'This is an ExecutionNode with long name',
 };

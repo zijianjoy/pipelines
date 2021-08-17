@@ -49,6 +49,28 @@ export function convertFlowElements(spec: PipelineSpec): Elements {
   return buildDag(spec, root);
 }
 
+export function convertSubDagToFlowElements(spec: PipelineSpec, namespaces: string[]): Elements {
+  let componentSpec = spec.getRoot();
+  if (!componentSpec) {
+    throw new Error('root not found in pipeline spec.');
+  }
+
+  const componentsMap = spec.getComponentsMap();
+  for (let index = 1; index < namespaces.length; index++) {
+    const dag = componentSpec!.getDag()!;
+    const tasksMap = dag!.getTasksMap();
+    const pipelineTaskSpec = tasksMap.get(namespaces[index]);
+    const componetRef = pipelineTaskSpec?.getComponentRef();
+    const componentName = componetRef?.getName();
+    componentSpec = componentsMap.get(componentName!);
+    if (!componentSpec) {
+      throw new Error(pipelineTaskSpec?.getTaskInfo()?.getName() + ' not found in pipeline spec.');
+    }
+  }
+
+  return buildDag(spec, componentSpec!);
+}
+
 /**
  * Build single layer graph of a pipeline definition in Reactflow.
  * @param pipelineSpec Full pipeline definition
@@ -101,12 +123,13 @@ function addTaskNodes(
         data: { label: name, taskType: TaskType.EXECUTOR },
         position: { x: 100, y: 200 },
         // TODO(zijianjoy): This node styling is temporarily.
-        style: {
-          color: 'white',
-          backgroundColor: '#00BBF9',
-          borderColor: 'transparent',
-          borderRadius: '30px',
-        },
+        // style: {
+        //   color: 'white',
+        //   backgroundColor: '#00BBF9',
+        //   borderColor: 'transparent',
+        //   borderRadius: '30px',
+        // },
+        type: 'execution',
       };
       flowGraph.push(node);
     } else if (componentSpec.hasDag()) {
@@ -117,6 +140,7 @@ function addTaskNodes(
         position: { x: 100, y: 200 },
         // TODO(zijianjoy): This node styling is temporarily.
         style: {},
+        type: 'subDag',
       };
       flowGraph.push(node);
     } else {
@@ -147,13 +171,14 @@ function addArtifactNodes(
     artifacts.forEach((artifactSpec, artifactKey) => {
       const node: Node = {
         id: getArtifactNodeKey(taskKey, artifactKey),
-        data: { label: artifactSpec.getArtifactType()?.getSchemaTitle() + ': ' + artifactKey },
+        data: { label: artifactKey }, // artifactSpec.getArtifactType()?.getSchemaTitle();
         position: { x: 300, y: 200 },
         // TODO(zijianjoy): This node styling is temporarily.
-        style: {
-          backgroundColor: '#fff59d',
-          borderColor: 'transparent',
-        },
+        // style: {
+        //   backgroundColor: '#fff59d',
+        //   borderColor: 'transparent',
+        // },
+        type: 'artifact',
       };
       flowGraph.push(node);
     });

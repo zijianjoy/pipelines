@@ -19,20 +19,20 @@ const nodeTypes = {
 
 interface WrappedArtifactNodeProps {
   id: string;
-  displayName: string;
+  label: string;
 }
 
-function WrappedArtifactNode({ displayName }: WrappedArtifactNodeProps) {
+function WrappedArtifactNode({ id, label }: WrappedArtifactNodeProps) {
   const onLoad = (reactFlowInstance: OnLoadParams) => {
     reactFlowInstance.fitView();
   };
 
   const elements = [
     {
-      id: '2',
+      id: id,
       type: 'artifact',
       position: { x: 100, y: 100 },
-      data: { text: 'An ArtifactNode node', displayName },
+      data: { label: label },
     },
   ];
 
@@ -75,11 +75,11 @@ const Template: ComponentStory<typeof WrappedArtifactNode> = args => (
 export const Primary = Template.bind({});
 Primary.args = {
   id: 'id',
-  displayName: 'This is an ArtifactNode',
+  label: 'This is an ArtifactNode',
 };
 
 export const Secondary = Template.bind({});
 Secondary.args = {
   id: 'id',
-  displayName: 'This is an ArtifactNode with long name',
+  label: 'This is an ArtifactNode with long name',
 };

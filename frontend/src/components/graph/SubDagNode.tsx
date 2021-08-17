@@ -4,6 +4,7 @@ import ReactFlow, { Handle, Position } from 'react-flow-renderer';
 import { classes } from 'typestyle';
 
 interface SubDagNodeProps {
+  id: string;
   data: any;
   selected: boolean;
   // id: string;
@@ -13,7 +14,7 @@ interface SubDagNodeProps {
   // isSelected: boolean;
 }
 
-function SubDagNode({ data, selected }: SubDagNodeProps) {
+function SubDagNode({ id, data, selected }: SubDagNodeProps) {
   const highlightClass = selected ? ' border border-blue-500' : ' border ';
   return (
     <>
@@ -35,8 +36,8 @@ function SubDagNode({ data, selected }: SubDagNodeProps) {
               <CropFreeIcon style={{ color: '#63B3ED' }} />
             </div>
             <div className='sm:px-6 sm:py-4 w-60 flex flex-col justify-center items-center '>
-              <span className='w-full truncate ...' id={data.id}>
-                {data.displayName}
+              <span className='w-full truncate ...' id={id}>
+                {data.label}
               </span>
             </div>
           </div>

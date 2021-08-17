@@ -19,20 +19,20 @@ const nodeTypes = {
 
 interface WrappedSubDagNodeProps {
   id: string;
-  displayName: string;
+  label: string;
 }
 
-function WrappedSubDagNode({ displayName }: WrappedSubDagNodeProps) {
+function WrappedSubDagNode({ id, label }: WrappedSubDagNodeProps) {
   const onLoad = (reactFlowInstance: OnLoadParams) => {
     reactFlowInstance.fitView();
   };
 
   const elements = [
     {
-      id: '2',
+      id: id,
       type: 'subDag',
       position: { x: 100, y: 100 },
-      data: { text: 'An SubDagNode node', displayName },
+      data: { label },
     },
   ];
 
@@ -73,11 +73,11 @@ const Template: ComponentStory<typeof WrappedSubDagNode> = args => <WrappedSubDa
 export const Primary = Template.bind({});
 Primary.args = {
   id: 'id',
-  displayName: 'This is a SubDagNode',
+  label: 'This is a SubDagNode',
 };
 
 export const Secondary = Template.bind({});
 Secondary.args = {
   id: 'id',
-  displayName: 'This is a SubDagNode with long name',
+  label: 'This is a SubDagNode with long name',
 };

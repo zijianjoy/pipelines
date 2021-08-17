@@ -21,41 +21,64 @@ import ReactFlow, {
   Elements,
   MiniMap,
   OnLoadParams,
+  Node,
   ReactFlowProvider,
 } from 'react-flow-renderer';
+import ArtifactNode from 'src/components/graph/ArtifactNode';
 import ExecutionNode from 'src/components/graph/ExecutionNode';
+import SubDagNamespace from 'src/components/graph/SubDagNamespace';
+import SubDagNode from 'src/components/graph/SubDagNode';
 import { color } from 'src/Css';
+import { TaskType } from 'src/lib/v2/StaticFlow';
 
 const nodeTypes = {
   execution: ExecutionNode,
+  artifact: ArtifactNode,
+  subDag: SubDagNode,
 };
 
 export interface StaticCanvasProps {
   elements: Elements;
+  namespaces: string[];
+  setNamespaces: (namespaces: string[]) => void;
 }
 
-const StaticCanvas = ({ elements }: StaticCanvasProps) => {
+const StaticCanvas = ({ elements, namespaces, setNamespaces }: StaticCanvasProps) => {
   const onLoad = (reactFlowInstance: OnLoadParams) => {
     reactFlowInstance.fitView();
   };
 
+  const doubleClickNode = (node: Node) => {
+    if (node.data['taskType'] !== TaskType.DAG) {
+      return;
+    }
+    const newNamespaces = [...namespaces, node.id.substr(5)]; //remove `task.`
+    setNamespaces(newNamespaces);
+  };
+
   return (
-    <div data-testid='StaticCanvas' style={{ width: '100%', height: '100%' }}>
-      <ReactFlowProvider>
-        <ReactFlow
-          style={{ background: color.lightGrey }}
-          elements={elements}
-          snapToGrid={true}
-          nodeTypes={nodeTypes}
-          onLoad={onLoad}
-          edgeTypes={{}}
-        >
-          <MiniMap />
-          <Controls />
-          <Background />
-        </ReactFlow>
-      </ReactFlowProvider>
-    </div>
+    <>
+      <SubDagNamespace namespaces={namespaces} setNamespaces={setNamespaces}></SubDagNamespace>
+      <div data-testid='StaticCanvas' style={{ width: '100%', height: '100%' }}>
+        <ReactFlowProvider>
+          <ReactFlow
+            style={{ background: color.lightGrey }}
+            elements={elements}
+            snapToGrid={true}
+            nodeTypes={nodeTypes}
+            onLoad={onLoad}
+            edgeTypes={{}}
+            onNodeDoubleClick={(event, element) => {
+              doubleClickNode(element);
+            }}
+          >
+            <MiniMap />
+            <Controls />
+            <Background />
+          </ReactFlow>
+        </ReactFlowProvider>
+      </div>
+    </>
   );
 };
 export default StaticCanvas;

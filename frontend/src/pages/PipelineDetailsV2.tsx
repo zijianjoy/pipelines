@@ -13,22 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
+import React, { useState } from 'react';
+import SubDagNamespace from 'src/components/graph/SubDagNamespace';
 import { PipelineFlowElement } from 'src/lib/v2/StaticFlow';
 import { commonCss } from '../Css';
 import StaticCanvas from './v2/StaticCanvas';
 
 interface PipelineDetailsV2Props {
   pipelineFlowElements: PipelineFlowElement[];
+  setNamespaces: (n: string[]) => void;
 }
 
 const PipelineDetailsV2: React.FC<PipelineDetailsV2Props> = ({
   pipelineFlowElements,
+  setNamespaces,
 }: PipelineDetailsV2Props) => {
+  const [ns, setNs] = useState(['root']);
+  // this.setStateSafe({ pipelineSpec: spec, elements: newelements, namespaces: ['root'] });
+
+  const namespaceChange = (n: string[]) => {
+    setNs(n);
+    setNamespaces(n);
+  };
+
   return (
     <div className={commonCss.page} data-testid={'pipeline-detail-v2'}>
       <div className={commonCss.page} style={{ position: 'relative', overflow: 'hidden' }}>
-        <StaticCanvas elements={pipelineFlowElements}></StaticCanvas>
+        <StaticCanvas
+          namespaces={ns}
+          setNamespaces={namespaceChange}
+          elements={pipelineFlowElements}
+        ></StaticCanvas>
         {/* <div>{pipelineIR}</div> */}
       </div>
     </div>
