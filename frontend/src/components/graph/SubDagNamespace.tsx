@@ -2,6 +2,7 @@ import grey from '@material-ui/core/colors/grey';
 import * as React from 'react';
 import { classes, stylesheet } from 'typestyle';
 import { color, commonCss, fonts, padding } from 'src/mlmd/Css';
+import { color as commonColor } from 'src/Css';
 import ArrowRightAltIcon from '@material-ui/icons/ArrowRightAlt';
 
 export interface SubDagNamespaceProps {
@@ -60,6 +61,7 @@ const actionBarCss = stylesheet({
     ...baseBreadcrumb,
     $nest: {
       '&:hover': {
+        color: commonColor.linkLight,
         textDecoration: 'underline',
       },
     },
