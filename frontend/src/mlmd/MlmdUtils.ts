@@ -41,6 +41,7 @@ import {
   GetEventsByExecutionIDsResponse,
   GetExecutionsByContextRequest,
 } from 'src/third_party/mlmd';
+import { GetArtifactsByContextRequest } from 'src/third_party/mlmd/generated/ml_metadata/proto/metadata_store_service_pb';
 import { Workflow } from 'third_party/argo-ui/argo_template';
 
 async function getContext({ type, name }: { type: string; name: string }): Promise<Context> {
@@ -53,12 +54,16 @@ async function getContext({ type, name }: { type: string; name: string }): Promi
   const request = new GetContextByTypeAndNameRequest();
   request.setTypeName(type);
   request.setContextName(name);
+  console.log('type name ' + type);
+  console.log('context name ' + name);
   try {
     const res = await Api.getInstance().metadataStoreService.getContextByTypeAndName(request);
     const context = res.getContext();
     if (context == null) {
       throw new Error('Cannot find specified context');
     }
+    getExecutionsFromContext(context);
+    getActifactsFromtContext(context);
     return context;
   } catch (err) {
     err.message = `Cannot find context with ${JSON.stringify(request.toObject())}: ` + err.message;
@@ -112,6 +117,47 @@ export async function getExecutionsFromContext(context: Context): Promise<Execut
     if (list == null) {
       throw new Error('response.getExecutionsList() is empty');
     }
+    list.forEach(exec => {
+      console.log('exec id ' + exec.getId());
+      console.log(
+        'exec name ' +
+          exec
+            .getCustomPropertiesMap()
+            .get('display_name')
+            ?.getStringValue(),
+      );
+    });
+    return list;
+  } catch (err) {
+    err.message =
+      `Cannot find executions by context ${context.getId()} with name ${context.getName()}: ` +
+      err.message;
+    throw err;
+  }
+}
+
+/**
+ * @throws error when network error
+ */
+export async function getActifactsFromtContext(context: Context): Promise<Artifact[]> {
+  const request = new GetArtifactsByContextRequest();
+  request.setContextId(context.getId());
+  try {
+    const res = await Api.getInstance().metadataStoreService.getArtifactsByContext(request);
+    const list = res.getArtifactsList();
+    if (list == null) {
+      throw new Error('response.getExecutionsList() is empty');
+    }
+    list.forEach(art => {
+      console.log('art id ' + art.getId());
+      console.log(
+        'art name ' +
+          art
+            .getCustomPropertiesMap()
+            .get('display_name')
+            ?.getStringValue(),
+      );
+    });
     return list;
   } catch (err) {
     err.message =
