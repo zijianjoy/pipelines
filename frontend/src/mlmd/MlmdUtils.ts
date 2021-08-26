@@ -41,6 +41,7 @@ import {
   GetEventsByExecutionIDsResponse,
   GetExecutionsByContextRequest,
 } from 'src/third_party/mlmd';
+import { ListOperationOptions } from 'src/third_party/mlmd/generated/ml_metadata/proto/metadata_store_pb';
 import { GetArtifactsByContextRequest } from 'src/third_party/mlmd/generated/ml_metadata/proto/metadata_store_service_pb';
 import { Workflow } from 'third_party/argo-ui/argo_template';
 
@@ -64,6 +65,7 @@ async function getContext({ type, name }: { type: string; name: string }): Promi
     }
     getExecutionsFromContext(context);
     getActifactsFromtContext(context);
+    getExecutionsFromContextWithFilter(context);
     return context;
   } catch (err) {
     err.message = `Cannot find context with ${JSON.stringify(request.toObject())}: ` + err.message;
@@ -108,6 +110,42 @@ export async function getRunContext(workflow: Workflow, runID: string): Promise<
 /**
  * @throws error when network error
  */
+export async function getExecutionsFromContextWithFilter(context: Context): Promise<Execution[]> {
+  const option = new ListOperationOptions();
+  option.setFilterQuery(
+    "custom_properties.pod_uid.string_value = 'cbefaa6a-39cc-401e-8844-4ff8a912775b'",
+  );
+
+  const request = new GetExecutionsByContextRequest();
+  request.setContextId(context.getId());
+  request.setOptions(option);
+  try {
+    const res = await Api.getInstance().metadataStoreService.getExecutionsByContext(request);
+    const list = res.getExecutionsList();
+    if (list == null) {
+      throw new Error('response.getExecutionsList() is empty');
+    }
+    list.forEach(exec => {
+      console.log('filtered exec id ' + exec.getId());
+      console.log(
+        'filtered exec name ' +
+          exec
+            .getCustomPropertiesMap()
+            .get('display_name')
+            ?.getStringValue(),
+      );
+    });
+    return list;
+  } catch (err) {
+    err.message =
+      `Cannot find executions by context ${context.getId()} with name ${context.getName()}: ` +
+      err.message;
+    throw err;
+  }
+}
+/**
+ * @throws error when network error
+ */
 export async function getExecutionsFromContext(context: Context): Promise<Execution[]> {
   const request = new GetExecutionsByContextRequest();
   request.setContextId(context.getId());
@@ -126,6 +164,8 @@ export async function getExecutionsFromContext(context: Context): Promise<Execut
             .get('display_name')
             ?.getStringValue(),
       );
+      console.log('exec status ' + exec.getLastKnownState());
+      console.log('exec last update time ' + exec.getLastUpdateTimeSinceEpoch());
     });
     return list;
   } catch (err) {
