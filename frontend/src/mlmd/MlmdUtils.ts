@@ -65,7 +65,7 @@ async function getContext({ type, name }: { type: string; name: string }): Promi
     }
     getExecutionsFromContext(context);
     getActifactsFromtContext(context);
-    getExecutionsFromContextWithFilter(context);
+    // getExecutionsFromContextWithFilter(context);
     return context;
   } catch (err) {
     err.message = `Cannot find context with ${JSON.stringify(request.toObject())}: ` + err.message;
@@ -155,6 +155,7 @@ export async function getExecutionsFromContext(context: Context): Promise<Execut
     if (list == null) {
       throw new Error('response.getExecutionsList() is empty');
     }
+    console.log('exec count ' + list.length);
     list.forEach(exec => {
       console.log('exec id ' + exec.getId());
       console.log(
@@ -167,6 +168,21 @@ export async function getExecutionsFromContext(context: Context): Promise<Execut
       console.log('exec status ' + exec.getLastKnownState());
       console.log('exec last update time ' + exec.getLastUpdateTimeSinceEpoch());
     });
+
+    const eventRequest = new GetEventsByExecutionIDsRequest();
+    eventRequest.setExecutionIdsList(list.map(e => e.getId()));
+    const eventRes = await Api.getInstance().metadataStoreService.getEventsByExecutionIDs(
+      eventRequest,
+    );
+    const events = eventRes.getEventsList();
+    console.log('event count ' + events.length);
+    events.forEach(event => {
+      console.log('event artifact id ' + event.getArtifactId());
+      console.log('event execution id ' + event.getExecutionId());
+      console.log('event path ' + event.getPath());
+      console.log('event type ' + event.getType());
+    });
+
     return list;
   } catch (err) {
     err.message =
@@ -188,6 +204,7 @@ export async function getActifactsFromtContext(context: Context): Promise<Artifa
     if (list == null) {
       throw new Error('response.getExecutionsList() is empty');
     }
+    console.log('artifact count ' + list.length);
     list.forEach(art => {
       console.log('art id ' + art.getId());
       console.log(
