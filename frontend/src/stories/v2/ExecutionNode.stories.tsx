@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { Execution } from 'src/third_party/mlmd';
 import { ComponentMeta, ComponentStory } from '@storybook/react';
 import React from 'react';
 import ReactFlow, {
@@ -27,19 +28,15 @@ import ExecutionNodeFailed from 'src/components/graph/ExecutionNodeFailed';
 import ExecutionNodePending from 'src/components/graph/ExecutionNodePending';
 import ExecutionNode from '../../components/graph/ExecutionNode';
 import './ExecutionNode.css';
-
-const nodeTypes = {
-  execution: ExecutionNode,
-  executionPending: ExecutionNodePending,
-  executionFailed: ExecutionNodeFailed,
-};
+import { NodeTypeNames, NODE_TYPES } from 'src/lib/v2/StaticFlow';
 
 interface WrappedExecutionNodeProps {
   id: string;
   label: string;
+  state: Execution.State;
 }
 
-function WrappedExecutionNode({ id, label }: WrappedExecutionNodeProps) {
+function WrappedExecutionNode({ id, label, state }: WrappedExecutionNodeProps) {
   const onLoad = (reactFlowInstance: OnLoadParams) => {
     reactFlowInstance.fitView();
   };
@@ -47,9 +44,9 @@ function WrappedExecutionNode({ id, label }: WrappedExecutionNodeProps) {
   const elements = [
     {
       id: id,
-      type: 'execution',
+      type: NodeTypeNames.EXECUTION,
       position: { x: 100, y: 100 },
-      data: { label },
+      data: { label, state },
     },
   ];
 
@@ -60,7 +57,7 @@ function WrappedExecutionNode({ id, label }: WrappedExecutionNodeProps) {
           className='bg-gray-100'
           elements={elements}
           snapToGrid={true}
-          nodeTypes={nodeTypes}
+          nodeTypes={NODE_TYPES}
           edgeTypes={{}}
           onLoad={onLoad}
         >
@@ -89,6 +86,7 @@ export const Primary = Template.bind({});
 Primary.args = {
   id: 'id',
   label: 'This is an ExecutionNode',
+  state: Execution.State.NEW,
 };
 
 export const Secondary = Template.bind({});
