@@ -63,6 +63,7 @@ async function getContext({ type, name }: { type: string; name: string }): Promi
     if (context == null) {
       throw new Error('Cannot find specified context');
     }
+    console.log('context detail ' + context.getId() + ' ' + context.getName());
     getExecutionsFromContext(context);
     getActifactsFromtContext(context);
     // getExecutionsFromContextWithFilter(context);
@@ -89,7 +90,7 @@ async function getKfpRunContext(argoWorkflowName: string): Promise<Context> {
   return await getContext({ name: argoWorkflowName, type: 'KfpRun' });
 }
 
-async function getKfpV2RunContext(runID: string): Promise<Context> {
+export async function getKfpV2RunContext(runID: string): Promise<Context> {
   return await getContext({ name: runID, type: 'system.PipelineRun' });
 }
 
@@ -298,13 +299,34 @@ function getStringValue(value?: string | number | Struct | null): string | undef
   return value;
 }
 
-async function getEventByExecution(execution: Execution): Promise<Event[]> {
+export async function getEventByExecution(execution: Execution): Promise<Event[]> {
   const executionId = execution.getId();
   if (!executionId) {
     throw new Error('Execution must have an ID');
   }
 
   const request = new GetEventsByExecutionIDsRequest().addExecutionIds(executionId);
+  let response: GetEventsByExecutionIDsResponse;
+  try {
+    response = await Api.getInstance().metadataStoreService.getEventsByExecutionIDs(request);
+  } catch (err) {
+    err.message = 'Failed to getEventsByExecutionIDs: ' + err.message;
+    throw err;
+  }
+  return response.getEventsList();
+}
+export async function getEventsByExecutions(executions: Execution[] | undefined): Promise<Event[]> {
+  if (!executions) {
+    return [];
+  }
+  const request = new GetEventsByExecutionIDsRequest();
+  for (let exec of executions) {
+    const execId = exec.getId();
+    if (!execId) {
+      throw new Error('Execution must have an ID');
+    }
+    request.addExecutionIds(execId);
+  }
   let response: GetEventsByExecutionIDsResponse;
   try {
     response = await Api.getInstance().metadataStoreService.getEventsByExecutionIDs(request);
@@ -413,7 +435,11 @@ export function filterLinkedArtifactsByType(
 }
 
 export function getArtifactName(linkedArtifact: LinkedArtifact): string | undefined {
-  return linkedArtifact.event
+  return getArtifactNameFromEvent(linkedArtifact.event);
+}
+
+export function getArtifactNameFromEvent(event: Event): string | undefined {
+  return event
     .getPath()
     ?.getStepsList()[0]
     .getKey();

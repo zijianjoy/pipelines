@@ -13,7 +13,12 @@
 // limitations under the License.
 
 import express from 'express';
+import { GetContextsResponse } from 'src/third_party/mlmd';
 import mockApiMiddleware from './mock-api-middleware';
+
+var grpc = require('grpc');
+const PROTO_PATH = 'mock-backend/ml_metadata/proto/metadata_store_service.proto';
+var protoLoader = require('@grpc/proto-loader');
 
 const app = express();
 const port = process.argv[2] || 3001;
@@ -34,3 +39,23 @@ app.listen(port, () => {
   // tslint:disable-next-line:no-console
   console.log('Server listening at http://localhost:' + port);
 });
+
+const options = {
+  keepCase: true,
+  // longs: String,
+  // enums: String,
+  defaults: true,
+  oneofs: true,
+  includeDirs: ['mock-backend/', './'],
+};
+var packageDefinition = protoLoader.loadSync(PROTO_PATH, options);
+const MetadataProto = grpc.loadPackageDefinition(packageDefinition);
+
+var Server = new grpc.Server();
+// Server.addService(MetadataProto.ml_metadata.MetadataStoreService.service, {
+//   GetContexts: (_: any, callback: any) => {
+//     callback(null, new GetContextsResponse());
+//   },
+// });
+// Server.bind('localhost:30043', grpc.ServerCredentials.createInsecure());
+// Server.start();

@@ -24,3 +24,7 @@ npx pbts -o src/generated/pipeline_spec/pbjs_ml_pipelines.d.ts src/generated/pip
 # Install protobufjs-cli by using the main library
 # Command: npm install protobufjs --save --save-prefix=~
 # In the future, this cli will have its own distribution, and isolate from main library.
+
+
+npx pbjs -t static-module -w commonjs -o src/generated/mlmd/pbjs_metadata_store_service.js ../third_party/ml-metadata/ml_metadata/proto/metadata_store_service.proto ../third_party/ml-metadata/ml_metadata/proto/metadata_store.proto
+npx pbts -o src/generated/mlmd/pbjs_metadata_store_service.d.ts src/generated/mlmd/pbjs_metadata_store_service.js

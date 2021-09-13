@@ -413,6 +413,9 @@ export namespace ComponentInputsSpec {
     getType(): PrimitiveType.PrimitiveTypeEnum;
     setType(value: PrimitiveType.PrimitiveTypeEnum): ParameterSpec;
 
+    getParameterType(): ParameterType.ParameterTypeEnum;
+    setParameterType(value: ParameterType.ParameterTypeEnum): ParameterSpec;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ParameterSpec.AsObject;
     static toObject(includeInstance: boolean, msg: ParameterSpec): ParameterSpec.AsObject;
@@ -424,6 +427,7 @@ export namespace ComponentInputsSpec {
   export namespace ParameterSpec {
     export type AsObject = {
       type: PrimitiveType.PrimitiveTypeEnum,
+      parameterType: ParameterType.ParameterTypeEnum,
     }
   }
 
@@ -489,6 +493,9 @@ export namespace ComponentOutputsSpec {
     getType(): PrimitiveType.PrimitiveTypeEnum;
     setType(value: PrimitiveType.PrimitiveTypeEnum): ParameterSpec;
 
+    getParameterType(): ParameterType.ParameterTypeEnum;
+    setParameterType(value: ParameterType.ParameterTypeEnum): ParameterSpec;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ParameterSpec.AsObject;
     static toObject(includeInstance: boolean, msg: ParameterSpec): ParameterSpec.AsObject;
@@ -500,6 +507,7 @@ export namespace ComponentOutputsSpec {
   export namespace ParameterSpec {
     export type AsObject = {
       type: PrimitiveType.PrimitiveTypeEnum,
+      parameterType: ParameterType.ParameterTypeEnum,
     }
   }
 
@@ -764,6 +772,30 @@ export namespace PrimitiveType {
     INT = 1,
     DOUBLE = 2,
     STRING = 3,
+  }
+}
+
+export class ParameterType extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ParameterType.AsObject;
+  static toObject(includeInstance: boolean, msg: ParameterType): ParameterType.AsObject;
+  static serializeBinaryToWriter(message: ParameterType, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ParameterType;
+  static deserializeBinaryFromReader(message: ParameterType, reader: jspb.BinaryReader): ParameterType;
+}
+
+export namespace ParameterType {
+  export type AsObject = {
+  }
+
+  export enum ParameterTypeEnum { 
+    PARAMETER_TYPE_ENUM_UNSPECIFIED = 0,
+    NUMBER_DOUBLE = 1,
+    NUMBER_INTEGER = 2,
+    STRING = 3,
+    BOOLEAN = 4,
+    LIST = 5,
+    STRUCT = 6,
   }
 }
 
@@ -1085,6 +1117,11 @@ export class ValueOrRuntimeParameter extends jspb.Message {
   getRuntimeParameter(): string;
   setRuntimeParameter(value: string): ValueOrRuntimeParameter;
 
+  getConstant(): google_protobuf_struct_pb.Value | undefined;
+  setConstant(value?: google_protobuf_struct_pb.Value): ValueOrRuntimeParameter;
+  hasConstant(): boolean;
+  clearConstant(): ValueOrRuntimeParameter;
+
   getValueCase(): ValueOrRuntimeParameter.ValueCase;
 
   serializeBinary(): Uint8Array;
@@ -1099,12 +1136,14 @@ export namespace ValueOrRuntimeParameter {
   export type AsObject = {
     constantValue?: Value.AsObject,
     runtimeParameter: string,
+    constant?: google_protobuf_struct_pb.Value.AsObject,
   }
 
   export enum ValueCase { 
     VALUE_NOT_SET = 0,
     CONSTANT_VALUE = 1,
     RUNTIME_PARAMETER = 2,
+    CONSTANT = 3,
   }
 }
 
@@ -1149,6 +1188,11 @@ export namespace PipelineDeploymentConfig {
     hasResources(): boolean;
     clearResources(): PipelineContainerSpec;
 
+    getEnvList(): Array<PipelineDeploymentConfig.PipelineContainerSpec.EnvVar>;
+    setEnvList(value: Array<PipelineDeploymentConfig.PipelineContainerSpec.EnvVar>): PipelineContainerSpec;
+    clearEnvList(): PipelineContainerSpec;
+    addEnv(value?: PipelineDeploymentConfig.PipelineContainerSpec.EnvVar, index?: number): PipelineDeploymentConfig.PipelineContainerSpec.EnvVar;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PipelineContainerSpec.AsObject;
     static toObject(includeInstance: boolean, msg: PipelineContainerSpec): PipelineContainerSpec.AsObject;
@@ -1164,6 +1208,7 @@ export namespace PipelineDeploymentConfig {
       argsList: Array<string>,
       lifecycle?: PipelineDeploymentConfig.PipelineContainerSpec.Lifecycle.AsObject,
       resources?: PipelineDeploymentConfig.PipelineContainerSpec.ResourceSpec.AsObject,
+      envList: Array<PipelineDeploymentConfig.PipelineContainerSpec.EnvVar.AsObject>,
     }
 
     export class Lifecycle extends jspb.Message {
@@ -1263,6 +1308,29 @@ export namespace PipelineDeploymentConfig {
         }
       }
 
+    }
+
+
+    export class EnvVar extends jspb.Message {
+      getName(): string;
+      setName(value: string): EnvVar;
+
+      getValue(): string;
+      setValue(value: string): EnvVar;
+
+      serializeBinary(): Uint8Array;
+      toObject(includeInstance?: boolean): EnvVar.AsObject;
+      static toObject(includeInstance: boolean, msg: EnvVar): EnvVar.AsObject;
+      static serializeBinaryToWriter(message: EnvVar, writer: jspb.BinaryWriter): void;
+      static deserializeBinary(bytes: Uint8Array): EnvVar;
+      static deserializeBinaryFromReader(message: EnvVar, reader: jspb.BinaryReader): EnvVar;
+    }
+
+    export namespace EnvVar {
+      export type AsObject = {
+        name: string,
+        value: string,
+      }
     }
 
   }
@@ -1555,6 +1623,9 @@ export namespace ExecutorInput {
     getArtifactsMap(): jspb.Map<string, ArtifactList>;
     clearArtifactsMap(): Inputs;
 
+    getParameterValuesMap(): jspb.Map<string, google_protobuf_struct_pb.Value>;
+    clearParameterValuesMap(): Inputs;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Inputs.AsObject;
     static toObject(includeInstance: boolean, msg: Inputs): Inputs.AsObject;
@@ -1567,6 +1638,7 @@ export namespace ExecutorInput {
     export type AsObject = {
       parametersMap: Array<[string, Value.AsObject]>,
       artifactsMap: Array<[string, ArtifactList.AsObject]>,
+      parameterValuesMap: Array<[string, google_protobuf_struct_pb.Value.AsObject]>,
     }
   }
 
@@ -1625,6 +1697,9 @@ export class ExecutorOutput extends jspb.Message {
   getArtifactsMap(): jspb.Map<string, ArtifactList>;
   clearArtifactsMap(): ExecutorOutput;
 
+  getParameterValuesMap(): jspb.Map<string, google_protobuf_struct_pb.Value>;
+  clearParameterValuesMap(): ExecutorOutput;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecutorOutput.AsObject;
   static toObject(includeInstance: boolean, msg: ExecutorOutput): ExecutorOutput.AsObject;
@@ -1637,6 +1712,7 @@ export namespace ExecutorOutput {
   export type AsObject = {
     parametersMap: Array<[string, Value.AsObject]>,
     artifactsMap: Array<[string, ArtifactList.AsObject]>,
+    parameterValuesMap: Array<[string, google_protobuf_struct_pb.Value.AsObject]>,
   }
 }
 

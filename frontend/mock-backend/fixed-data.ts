@@ -24,6 +24,7 @@ import errorRun from './mock-error-runtime';
 import xgboostRun from './mock-xgboost-runtime';
 import largeGraph from './large-graph-runtime';
 import retryRun from './mock-retry-runtime';
+import v2_lightweight_python_pipeline from './data/v2/pipeline/mock_lightweight_python_functions_v2_pipeline.json';
 
 function padStartTwoZeroes(str: string): string {
   let padded = str || '';
@@ -342,6 +343,11 @@ jobs.push(...generateNJobs());
 
 const experiments: ApiExperiment[] = [
   {
+    description: 'This experiment includes KFP v2 runs',
+    id: '275ea11d-ac63-4ce3-bc33-ec81981ed56b',
+    name: 'KFP v2 Runs',
+  },
+  {
     description: 'This experiment has no runs',
     id: '7fc01714-4a13-4c05-5902-a8a72c14253b',
     name: 'No Runs',
@@ -368,6 +374,60 @@ const experiments: ApiExperiment[] = [
 const versions: ApiPipelineVersion[] = [PIPELINE_UNSTRUCTED_TEXT_DEFAULT];
 
 const runs: ApiRunDetail[] = [
+  {
+    pipeline_runtime: {
+      // workflow_manifest: JSON.stringify(coinflipRun),
+    },
+    run: {
+      created_at: new Date('2021-04-17T20:58:23.000Z'),
+      description: 'V2 two steps run from pipeline template',
+      finished_at: new Date('2021-04-18T21:01:23.000Z'),
+      id: '3308d0ec-f1b3-4488-a2d3-8ad0f91e88f9',
+      name: 'v2-lightweight-two-steps-i5jk',
+      pipeline_spec: {
+        pipeline_id: PIPELINE_V2_PYTHON_TWO_STEPS_DEFAULT.id,
+        pipeline_name: PIPELINE_V2_PYTHON_TWO_STEPS_DEFAULT.name,
+        workflow_manifest: JSON.stringify(v2_lightweight_python_pipeline),
+      },
+      resource_references: [
+        {
+          key: {
+            id: '275ea11d-ac63-4ce3-bc33-ec81981ed56b',
+            type: ApiResourceType.EXPERIMENT,
+          },
+          relationship: ApiRelationship.OWNER,
+        },
+      ],
+      scheduled_at: new Date('2021-04-17T20:58:23.000Z'),
+      status: 'Succeeded',
+    },
+  },
+  {
+    pipeline_runtime: {
+      // workflow_manifest: JSON.stringify(v2_lightweight_python_pipeline),
+    },
+    run: {
+      created_at: new Date('2021-03-17T20:58:23.000Z'),
+      description: 'V2 two steps run from SDK',
+      finished_at: new Date('2021-03-18T21:01:23.000Z'),
+      id: '3308d0ec-f1b3-4488-a2d3-8ad0f91e88f8',
+      name: 'v2-lightweight-two-steps-jk4u',
+      pipeline_spec: {
+        workflow_manifest: JSON.stringify(v2_lightweight_python_pipeline),
+      },
+      resource_references: [
+        {
+          key: {
+            id: '275ea11d-ac63-4ce3-bc33-ec81981ed56b',
+            type: ApiResourceType.EXPERIMENT,
+          },
+          relationship: ApiRelationship.OWNER,
+        },
+      ],
+      scheduled_at: new Date('2021-03-17T20:58:23.000Z'),
+      status: 'Succeeded',
+    },
+  },
   {
     pipeline_runtime: {
       workflow_manifest: JSON.stringify(coinflipRun),

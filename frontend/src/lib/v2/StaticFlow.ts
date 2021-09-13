@@ -393,10 +393,24 @@ export function getTaskKeyFromNodeKey(nodeKey: string) {
   return nodeKey.substr(TASK_NODE_KEY_PREFIX.length);
 }
 
-function getArtifactNodeKey(taskKey: string, artifactKey: string): string {
+const ARTIFACT_NODE_KEY_PREFIX = 'artifact.';
+export function getArtifactNodeKey(taskKey: string, artifactKey: string): string {
   // id is in pattern artifact.producerTaskKey.outputArtifactKey
   // Because task name and artifact name cannot contain dot in python.
-  return 'artifact.' + taskKey + '.' + artifactKey;
+  return ARTIFACT_NODE_KEY_PREFIX + taskKey + '.' + artifactKey;
+}
+
+export function getTaskAndArtifactNameFromNodeKey(nodeKey: string) {
+  if (!nodeKey.startsWith(ARTIFACT_NODE_KEY_PREFIX)) {
+    throw new Error(
+      'Artifact nodeKey: ' + nodeKey + " doesn't start with " + ARTIFACT_NODE_KEY_PREFIX,
+    );
+  }
+  const keys = nodeKey.substr(ARTIFACT_NODE_KEY_PREFIX.length).split('.');
+  if (keys.length != 2) {
+    throw new Error('Artifact nodeKey: ' + nodeKey + " doesn't have two keys splitted with .");
+  }
+  return keys;
 }
 
 function getTaskToArtifactEdgeKey(taskKey: string, artifactKey: string): string {

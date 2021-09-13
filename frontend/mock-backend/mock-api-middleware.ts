@@ -31,6 +31,9 @@ import { ApiListRunsResponse, ApiResourceType, ApiRun, ApiRunStorageState } from
 import { ExperimentSortKeys, PipelineSortKeys, RunSortKeys } from '../src/lib/Apis';
 import { Response } from 'express-serve-static-core';
 import { data as fixedData, namedPipelines, v2PipelineSpecMap } from './fixed-data';
+import { Context, GetContextByTypeAndNameResponse } from 'src/third_party/mlmd';
+
+import { ml_metadata } from 'src/generated/mlmd/pbjs_metadata_store_service';
 
 const rocMetadataJsonPath = './eval-output/metadata.json';
 const rocMetadataJsonPath2 = './eval-output/metadata2.json';
@@ -68,6 +71,25 @@ export default (app: express.Application) => {
 
   app.set('json spaces', 2);
   app.use(express.json());
+
+  // app.post('/ml_metadata.MetadataStoreService/GetContextByTypeAndName', (_, res) => {
+  //   // const response = ml_metadata.GetContextByTypeAndNameResponse.create();
+  //   // response.context = ml_metadata.Context.create({ id: 2, name: 'runContextName' });
+
+  //   const response = ml_metadata.GetContextByTypeAndNameResponse.fromObject({
+  //     context: { id: 2, name: 'runName' },
+  //   });
+
+  //   res.header('Content-Type', 'application/grpc-web+proto');
+  //   res.header('grpc-accept-encoding', 'identity,deflate,gzip');
+  //   res.end(ml_metadata.GetContextByTypeAndNameResponse.encode(response).finish());
+
+  //   // const response = new GetContextByTypeAndNameResponse();
+  //   // response.setContext(new Context().setId(2).setName('runContextName'));
+
+  //   // res.header('Content-Type', 'application/grpc-web+proto');
+  //   // res.send(response.);
+  // });
 
   app.get(v1beta1Prefix + '/healthz', (_, res) => {
     res.header('Content-Type', 'application/json');
