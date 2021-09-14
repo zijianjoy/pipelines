@@ -8,7 +8,7 @@ upstream:
     repo: https://github.com/argoproj/argo-workflows
     directory: /manifests
     ref: v3.1.1
-  updateStrategy: resource-merge
+  updateStrategy: fast-forward
 upstreamLock:
   type: git
   git:
