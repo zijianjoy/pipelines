@@ -36,7 +36,7 @@ export default function RunDetailsRouter(props: RunDetailsProps) {
     data.run.pipeline_spec.workflow_manifest &&
     context
   ) {
-    console.log(data.run.pipeline_spec.workflow_manifest);
+    // console.log(data.run.pipeline_spec.workflow_manifest);
     const isIR = isIrPipeline(data.run.pipeline_spec.workflow_manifest);
     if (isIR) {
       return (

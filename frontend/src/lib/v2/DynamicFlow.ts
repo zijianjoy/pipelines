@@ -51,12 +51,13 @@ const TASK_NAME_KEY = 'task_name';
 //         similar to TASK, but needs to determine subDAG type.
 //     Save nodes to result.
 // Save edges to result.
-export function getStatefulFlowElements(
+export function updateStatefulFlowElements(
   elems: PipelineFlowElement[],
   executions: Execution[],
   events: Event[],
   artifacts: Artifact[],
-): PipelineFlowElement[] {
+) {
+  // IMPORTANT: Changes to elems will happen in-place.
   const taskNameToExecution = getTaskNameToExecution(executions);
   const executionIdToExectuion = getExectuionIdToExecution(executions);
   const artifactIdToArtifact = getArtifactIdToArtifact(artifacts);
@@ -66,7 +67,7 @@ export function getStatefulFlowElements(
     artifactIdToArtifact,
   );
 
-  let result: PipelineFlowElement[] = [];
+  // let result: PipelineFlowElement[] = [];
   for (let elem of elems) {
     let updatedElem = elem;
     if (NodeTypeNames.EXECUTION == elem.type) {
@@ -82,9 +83,9 @@ export function getStatefulFlowElements(
       // Edges don't have types yet.
       // For any element that don't match the above types, copy over directly.
     }
-    result.push(updatedElem);
+    // result.push(updatedElem);
   }
-  return result;
+  // return result;
 }
 
 function getTaskNameToExecution(executions: Execution[]): Map<string, Execution> {

@@ -17,11 +17,11 @@ import { useState } from 'react';
 import { useQuery } from 'react-query';
 import MD2Tabs from 'src/atoms/MD2Tabs';
 import { commonCss, padding } from 'src/Css';
-import { getStatefulFlowElements } from 'src/lib/v2/DynamicFlow';
+import { updateStatefulFlowElements } from 'src/lib/v2/DynamicFlow';
 import { convertFlowElements } from 'src/lib/v2/StaticFlow';
 import * as WorkflowUtils from 'src/lib/v2/WorkflowUtils';
 import {
-  getActifactsFromtContext,
+  getActifactsFromContext,
   getEventByExecution,
   getEventsByExecutions,
   getExecutionsFromContext,
@@ -48,24 +48,34 @@ export function RunDetailsV2(props: RunDetailsV2Props) {
     Execution[],
     Error
   >(['execution_list', { id: props.context }], () => getExecutionsFromContext(props.context), {
-    staleTime: 30000,
+    staleTime: 100000,
+    cacheTime: Infinity,
   });
+
   const { isSuccess: eventSuccess, error: errorEvents, data: events } = useQuery<Event[], Error>(
     ['event_list', { executions: executions }],
     () => getEventsByExecutions(executions),
     {
-      staleTime: 30000,
+      staleTime: 100000,
+      cacheTime: Infinity,
     },
   );
+
   const { isSuccess: artifactSuccess, error: errorArtifact, data: artifacts } = useQuery<
     Artifact[],
     Error
-  >(['artifact_list', { id: props.context }], () => getActifactsFromtContext(props.context), {
-    staleTime: 30000,
+  >(['artifact_list', { id: props.context }], () => getActifactsFromContext(props.context), {
+    staleTime: 100000,
+    cacheTime: Infinity,
   });
 
-  if (executions && events && artifacts) {
-    setFlowElements(getStatefulFlowElements(flowElements, executions, events, artifacts));
+  if (execSuccess && eventSuccess && artifactSuccess && executions && events && artifacts) {
+    console.log('exectuion length ' + executions.length);
+    console.log('event length ' + events.length);
+    console.log('artifact length ' + artifacts.length);
+    console.log('stateful element ');
+
+    updateStatefulFlowElements(flowElements, executions, events, artifacts);
   }
 
   // TODO: Update elements when layers change.

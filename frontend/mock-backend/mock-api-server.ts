@@ -15,6 +15,7 @@
 import express from 'express';
 import { GetContextsResponse } from 'src/third_party/mlmd';
 import mockApiMiddleware from './mock-api-middleware';
+import proxy from 'http-proxy-middleware';
 
 var grpc = require('grpc');
 const PROTO_PATH = 'mock-backend/ml_metadata/proto/metadata_store_service.proto';
@@ -32,6 +33,24 @@ app.use((_: any, res: any, next: any) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   next();
 });
+
+export const HACK_FIX_HPM_PARTIAL_RESPONSE_HEADERS = {
+  Connection: 'keep-alive',
+};
+
+/** Proxy metadata requests to the Envoy instance which will handle routing to the metadata gRPC server */
+// kubectl port-forward svc/metadata-envoy-service 9090:9090
+app.all(
+  '/ml_metadata.*',
+  proxy({
+    changeOrigin: true,
+    onProxyReq: proxyReq => {
+      console.log('Metadata proxied request: ', (proxyReq as any).path);
+    },
+    headers: HACK_FIX_HPM_PARTIAL_RESPONSE_HEADERS,
+    target: getAddress({ host: 'localhost', port: '9090' }),
+  }),
+);
 
 mockApiMiddleware(app as any);
 
@@ -51,7 +70,7 @@ const options = {
 var packageDefinition = protoLoader.loadSync(PROTO_PATH, options);
 const MetadataProto = grpc.loadPackageDefinition(packageDefinition);
 
-var Server = new grpc.Server();
+// var Server = new grpc.Server();
 // Server.addService(MetadataProto.ml_metadata.MetadataStoreService.service, {
 //   GetContexts: (_: any, callback: any) => {
 //     callback(null, new GetContextsResponse());
@@ -59,3 +78,18 @@ var Server = new grpc.Server();
 // });
 // Server.bind('localhost:30043', grpc.ServerCredentials.createInsecure());
 // Server.start();
+export function getAddress({
+  host,
+  port,
+  namespace,
+  schema = 'http',
+}: {
+  host: string;
+  port?: string | number;
+  namespace?: string;
+  schema?: string;
+}) {
+  namespace = namespace ? `.${namespace}` : '';
+  port = port ? `:${port}` : '';
+  return `${schema}://${host}${namespace}${port}`;
+}

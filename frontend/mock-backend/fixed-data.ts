@@ -25,6 +25,7 @@ import xgboostRun from './mock-xgboost-runtime';
 import largeGraph from './large-graph-runtime';
 import retryRun from './mock-retry-runtime';
 import v2_lightweight_python_pipeline from './data/v2/pipeline/mock_lightweight_python_functions_v2_pipeline.json';
+import xgboost_sample_pipeline from './data/v2/pipeline/xgboost_sample_pipeline.json';
 
 function padStartTwoZeroes(str: string): string {
   let padded = str || '';
@@ -379,10 +380,38 @@ const runs: ApiRunDetail[] = [
       // workflow_manifest: JSON.stringify(coinflipRun),
     },
     run: {
+      created_at: new Date('2021-05-17T20:58:23.000Z'),
+      description: 'V2 xgboost',
+      finished_at: new Date('2021-05-18T21:01:23.000Z'),
+      id: 'e0115ac1-0479-4194-a22d-01e65e09a32b',
+      name: 'v2-xgboost-ilbo',
+      pipeline_spec: {
+        pipeline_id: PIPELINE_V2_XGBOOST.id,
+        pipeline_name: PIPELINE_V2_XGBOOST_DEFAULT.name,
+        workflow_manifest: JSON.stringify(xgboost_sample_pipeline),
+      },
+      resource_references: [
+        {
+          key: {
+            id: '275ea11d-ac63-4ce3-bc33-ec81981ed56b',
+            type: ApiResourceType.EXPERIMENT,
+          },
+          relationship: ApiRelationship.OWNER,
+        },
+      ],
+      scheduled_at: new Date('2021-05-17T20:58:23.000Z'),
+      status: 'Succeeded',
+    },
+  },
+  {
+    pipeline_runtime: {
+      // workflow_manifest: JSON.stringify(coinflipRun),
+    },
+    run: {
       created_at: new Date('2021-04-17T20:58:23.000Z'),
       description: 'V2 two steps run from pipeline template',
       finished_at: new Date('2021-04-18T21:01:23.000Z'),
-      id: '3308d0ec-f1b3-4488-a2d3-8ad0f91e88f9',
+      id: 'c1e11ff7-e1af-4a8d-a9e4-718f32934ae0',
       name: 'v2-lightweight-two-steps-i5jk',
       pipeline_spec: {
         pipeline_id: PIPELINE_V2_PYTHON_TWO_STEPS_DEFAULT.id,

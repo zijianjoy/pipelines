@@ -65,7 +65,7 @@ async function getContext({ type, name }: { type: string; name: string }): Promi
     }
     console.log('context detail ' + context.getId() + ' ' + context.getName());
     getExecutionsFromContext(context);
-    getActifactsFromtContext(context);
+    getActifactsFromContext(context);
     // getExecutionsFromContextWithFilter(context);
     return context;
   } catch (err) {
@@ -157,18 +157,18 @@ export async function getExecutionsFromContext(context: Context): Promise<Execut
       throw new Error('response.getExecutionsList() is empty');
     }
     console.log('exec count ' + list.length);
-    list.forEach(exec => {
-      console.log('exec id ' + exec.getId());
-      console.log(
-        'exec name ' +
-          exec
-            .getCustomPropertiesMap()
-            .get('display_name')
-            ?.getStringValue(),
-      );
-      console.log('exec status ' + exec.getLastKnownState());
-      console.log('exec last update time ' + exec.getLastUpdateTimeSinceEpoch());
-    });
+    // list.forEach(exec => {
+    //   console.log('exec id ' + exec.getId());
+    //   console.log(
+    //     'exec name ' +
+    //       exec
+    //         .getCustomPropertiesMap()
+    //         .get('display_name')
+    //         ?.getStringValue(),
+    //   );
+    //   console.log('exec status ' + exec.getLastKnownState());
+    //   console.log('exec last update time ' + exec.getLastUpdateTimeSinceEpoch());
+    // });
 
     const eventRequest = new GetEventsByExecutionIDsRequest();
     eventRequest.setExecutionIdsList(list.map(e => e.getId()));
@@ -177,12 +177,12 @@ export async function getExecutionsFromContext(context: Context): Promise<Execut
     );
     const events = eventRes.getEventsList();
     console.log('event count ' + events.length);
-    events.forEach(event => {
-      console.log('event artifact id ' + event.getArtifactId());
-      console.log('event execution id ' + event.getExecutionId());
-      console.log('event path ' + event.getPath());
-      console.log('event type ' + event.getType());
-    });
+    // events.forEach(event => {
+    //   console.log('event artifact id ' + event.getArtifactId());
+    //   console.log('event execution id ' + event.getExecutionId());
+    //   console.log('event path ' + event.getPath());
+    //   console.log('event type ' + event.getType());
+    // });
 
     return list;
   } catch (err) {
@@ -196,7 +196,7 @@ export async function getExecutionsFromContext(context: Context): Promise<Execut
 /**
  * @throws error when network error
  */
-export async function getActifactsFromtContext(context: Context): Promise<Artifact[]> {
+export async function getActifactsFromContext(context: Context): Promise<Artifact[]> {
   const request = new GetArtifactsByContextRequest();
   request.setContextId(context.getId());
   try {
