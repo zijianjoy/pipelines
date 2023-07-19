@@ -26,6 +26,9 @@ RUN go-licenses csv ./backend/src/apiserver > /tmp/licenses.csv && \
   diff /tmp/licenses.csv backend/third_party_licenses/apiserver.csv && \
   go-licenses save ./backend/src/apiserver --save_path /tmp/NOTICES
 
+# Build plugin
+RUN GO111MODULE=on go build -buildmode=plugin -o /bin/multicluster.so backend/src/common/plugins/multicluster/workflow_client.go 
+
 # 2. Compile preloaded pipeline samples
 FROM python:3.7 as compiler
 RUN apt-get update -y && apt-get install --no-install-recommends -y -q default-jdk python3-setuptools python3-dev jq
@@ -67,6 +70,7 @@ WORKDIR /bin
 
 COPY backend/src/apiserver/config/ /config
 COPY --from=builder /bin/apiserver /bin/apiserver
+COPY --from=builder /bin/multicluster.so /bin/multicluster.so
 
 # Copy licenses and notices.
 COPY --from=builder /tmp/licenses.csv /third_party/licenses.csv

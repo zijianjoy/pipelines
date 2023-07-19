@@ -16,6 +16,7 @@ package util
 
 import (
 	"context"
+	"plugin"
 	"time"
 
 	argoclient "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
@@ -82,23 +83,64 @@ type ExecutionInterface interface {
 func NewExecutionClientOrFatal(execType ExecutionType, initConnectionTimeout time.Duration, clientParams ClientParameters) ExecutionClient {
 	switch execType {
 	case ArgoWorkflow:
+		// var mod string
+		// if pluginName == "multi-cluster" {
+		// 	mod = "/bin/multicluster.so"
+		// } else {
+		// 	mod = "./plugins/default.so"
+		// }
+		// plug, err := plugin.Open(mod)
+		// if err != nil {
+		// 	return errors.Wrap(err, "Failed to load the plugin")
+		// }
+		// clientHook, err := plug.Lookup("WorkflowClientHook")
+		// if err != nil {
+		// 	return errors.Wrap(err, "Failed to load the plugin")
+		// }
+		// var hook WorkflowClientHook
+		// hook, ok := clientHook.(WorkflowClientHook)
+		// if !ok {
+		// 	return errors.New("Failed to load the plugin")
+		// }
+
+		// return hook.CreateClient(initConnectionTimeout, clientParams)
+		var mod = "/bin/multicluster.so"
+		plug, err := plugin.Open(mod)
+		if err != nil {
+			glog.Fatalf("Failed to open plugin. Error: %v", err)
+		}
+		clientHook, err := plug.Lookup("WorkflowClientHook")
+		if err != nil {
+			glog.Fatalf("Failed to lookup plugin. Error: %v", err)
+		}
+		var hook WorkflowClientHook
+		hook, ok := clientHook.(WorkflowClientHook)
+		if !ok {
+			glog.Fatalf("Failed to convert plugin. Error: %v", err)
+		}
+
 		var argoProjClient *argoclient.Clientset
 		operation := func() error {
-			restConfig, err := rest.InClusterConfig()
+			restConfig, err := hook.CreateConfig(clientParams.QPS, clientParams.Burst)
+			// restConfig, err := rest.InClusterConfig()
+			// if err != nil {
+			// 	return errors.Wrap(err, "Failed to initialize the RestConfig")
+			// }
+			// restConfig.QPS = float32(clientParams.QPS)
+			// restConfig.Burst = clientParams.Burst
+			// argoProjClient = argoclient.NewForConfigOrDie(restConfig)
 			if err != nil {
 				return errors.Wrap(err, "Failed to initialize the RestConfig")
 			}
-			restConfig.QPS = float32(clientParams.QPS)
-			restConfig.Burst = clientParams.Burst
-			argoProjClient = argoclient.NewForConfigOrDie(restConfig)
+			argoProjClient = argoclient.NewForConfigOrDie(&restConfig)
 			return nil
 		}
 
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = initConnectionTimeout
-		err := backoff.Retry(operation, b)
-		if err != nil {
-			glog.Fatalf("Failed to create ExecutionClient for Argo. Error: %v", err)
+		errretry := backoff.Retry(operation, b)
+		if errretry != nil {
+			glog.Fatalf("Failed to create ExecutionClient for Argo. Error: %v", errretry)
 		}
 		return &WorkflowClient{client: argoProjClient}
 	case TektonPipelineRun:
